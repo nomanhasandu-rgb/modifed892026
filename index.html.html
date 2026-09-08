@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMCG Effort Trade-Off Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #dfe6ef;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1440px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 40px;
+            box-shadow: 0 30px 80px rgba(26, 43, 76, 0.15), 0 8px 32px rgba(26, 43, 76, 0.06);
+            padding: 28px 28px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 14px;
+            border-bottom: 2px solid rgba(26, 43, 76, 0.06);
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #1a2b4c, #2a4b7c);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(26, 43, 76, 0.2);
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0a1a2e;
+            letter-spacing: -0.02em;
+        }
+        .header h1 span {
+            color: #2a6f97;
+            font-weight: 400;
+        }
+        .header-badges {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: rgba(26, 43, 76, 0.07);
+            color: #1a2b4c;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 30px;
+            border: 1px solid rgba(26, 43, 76, 0.06);
+        }
+        .badge-live {
+            background: linear-gradient(135deg, #c44536, #e85d4a);
+            color: white;
+            border: none;
+            animation: pulse-badge 2s infinite;
+        }
+        @keyframes pulse-badge {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.96); }
+        }
+
+        /* GRID */
+        .three-panel {
+            display: grid;
+            grid-template-columns: 0.85fr 1.25fr 0.9fr;
+            gap: 20px;
+            min-height: 460px;
+        }
+        @media (max-width: 1100px) {
+            .three-panel { grid-template-columns: 1fr; gap: 18px; }
+        }
+
+        /* ---- COLORFUL PANELS ---- */
+        .panel-metrics {
+            background: linear-gradient(145deg, #f0f7fe, #e0edfa);
+            border-radius: 20px;
+            padding: 16px 18px;
+            border: 1px solid rgba(42, 111, 151, 0.12);
+            box-shadow: 0 4px 16px rgba(26, 43, 76, 0.06);
+            transition: all 0.3s ease;
+        }
+        .panel-metrics:hover {
+            box-shadow: 0 8px 32px rgba(42, 111, 151, 0.10);
+        }
+
+        .panel-leaderboard {
+            background: linear-gradient(145deg, #f0faf5, #dff0e8);
+            border-radius: 20px;
+            padding: 16px 18px;
+            border: 1px solid rgba(30, 126, 52, 0.12);
+            box-shadow: 0 4px 16px rgba(26, 43, 76, 0.06);
+            transition: all 0.3s ease;
+        }
+        .panel-leaderboard:hover {
+            box-shadow: 0 8px 32px rgba(30, 126, 52, 0.10);
+        }
+
+        .panel-control {
+            background: linear-gradient(145deg, #0a1a2e, #142a44);
+            color: white;
+            border-radius: 20px;
+            padding: 14px 16px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 16px rgba(26, 43, 76, 0.15);
+        }
+        .panel-control:hover {
+            box-shadow: 0 8px 32px rgba(26, 43, 76, 0.20);
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #6f8aa8;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-title .accent-line {
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(26, 43, 76, 0.08), transparent);
+        }
+        .panel-control .panel-title {
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 8px;
+        }
+        .panel-control .panel-title .accent-line {
+            background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+        }
+
+        /* ---- METRICS ---- */
+        .metrics-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .metric-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 14px;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 8px rgba(26, 43, 76, 0.04);
+            transition: all 0.2s ease;
+        }
+        .metric-card:hover {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 16px rgba(26, 43, 76, 0.08);
+        }
+        .metric-card.individual { border-left: 4px solid #1e7e34; }
+        .metric-card.team { border-left: 4px solid #2a6f97; }
+        .metric-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+        .metric-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a2b4c;
+        }
+        .metric-value {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0a1a2e;
+        }
+        .metric-sub {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1px;
+        }
+        .metric-sub-label {
+            font-size: 11px;
+            font-weight: 400;
+            color: #6f8aa8;
+        }
+        .metric-sub-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0a1a2e;
+        }
+        .progress-track {
+            width: 100%;
+            height: 5px;
+            background: rgba(26, 43, 76, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 3px 0 1px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .progress-fill.green { background: linear-gradient(90deg, #1e7e34, #34a853); }
+        .progress-fill.blue { background: linear-gradient(90deg, #1a5a8a, #2a7fc9); }
+        .progress-fill.orange { background: linear-gradient(90deg, #c97a2b, #e8a34a); }
+
+        .metric-rank-badge {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 12px;
+            border-radius: 20px;
+            background: rgba(26, 43, 76, 0.06);
+            color: #1a2b4c;
+            transition: all 0.3s ease;
+        }
+        .metric-rank-badge.up { background: rgba(30, 126, 52, 0.12); color: #1e7e34; }
+        .metric-rank-badge.down { background: rgba(196, 69, 54, 0.12); color: #c44536; }
+
+        .alert-box {
+            margin-top: 6px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            transition: all 0.4s ease;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            box-shadow: 0 2px 8px rgba(26, 43, 76, 0.03);
+        }
+        .alert-box.conflict {
+            border-color: rgba(196, 69, 54, 0.2);
+            color: #7a2e1f;
+        }
+        .alert-box.conflict .icon { color: #c44536; }
+        .alert-box.synergy {
+            border-color: rgba(30, 126, 52, 0.2);
+            color: #145a2a;
+        }
+        .alert-box.synergy .icon { color: #1e7e34; }
+        .alert-box .icon { font-size: 16px; }
+
+        /* ---- LEADERBOARD ---- */
+        .lb-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 4px;
+        }
+        .lb-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 12px;
+            padding: 8px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 8px rgba(26, 43, 76, 0.03);
+        }
+        .lb-card h4 {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #6f8aa8;
+            margin-bottom: 4px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(26, 43, 76, 0.06);
+        }
+
+        /* Header row inside leaderboard */
+        .lb-header {
+            display: flex;
+            align-items: center;
+            padding: 2px 4px 4px 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #4a6a8a;
+            border-bottom: 1px solid rgba(26, 43, 76, 0.08);
+            margin-bottom: 2px;
+        }
+        .lb-header .lb-rank { color: #4a6a8a; }
+        .lb-header .lb-name { color: #4a6a8a; }
+        .lb-header .lb-score { color: #4a6a8a; text-align: right; }
+
+        .lb-row {
+            display: flex;
+            align-items: center;
+            padding: 3px 4px;
+            border-radius: 6px;
+            font-size: 11px;
+            gap: 4px;
+            transition: all 0.15s ease;
+        }
+        .lb-row:hover { background: rgba(26, 43, 76, 0.03); }
+        .lb-row.user {
+            background: rgba(255, 217, 102, 0.25);
+            border-left: 3px solid #ffd966;
+            border-radius: 6px 0 0 6px;
+        }
+        .lb-rank {
+            font-weight: 700;
+            color: #6f8aa8;
+            min-width: 24px;
+            font-size: 10px;
+        }
+        .lb-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e6edf6, #f0f4fa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: #1a2b4c;
+            flex-shrink: 0;
+        }
+        .lb-avatar.user-avatar {
+            background: linear-gradient(135deg, #ffd966, #f7c948);
+            color: #0a1a2e;
+        }
+        .lb-name {
+            flex: 1;
+            color: #1a2b4c;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lb-score {
+            font-weight: 700;
+            color: #0a1a2e;
+            font-size: 11px;
+            min-width: 24px;
+            text-align: right;
+        }
+        .lb-movement {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 10px;
+            min-width: 30px;
+            text-align: center;
+        }
+        .lb-movement.up { background: rgba(30, 126, 52, 0.12); color: #1e7e34; }
+        .lb-movement.down { background: rgba(196, 69, 54, 0.12); color: #c44536; }
+        .lb-movement.flat { color: #6f8aa8; font-weight: 400; }
+
+        /* ---- FOOTNOTE (with heading, left-aligned) ---- */
+        .lb-footnote {
+            margin-top: 10px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 12px rgba(26, 43, 76, 0.04);
+            text-align: left;
+        }
+        .lb-footnote .heading {
+            font-weight: 700;
+            font-size: 12px;
+            color: #0a1a2e;
+            margin-bottom: 6px;
+            letter-spacing: 0.2px;
+        }
+        .lb-footnote .content {
+            font-size: 10.5px;
+            color: #3d5775;
+            line-height: 1.8;
+        }
+        .lb-footnote .content .arrow-up {
+            color: #1e7e34;
+            font-weight: 700;
+        }
+        .lb-footnote .content .arrow-down {
+            color: #c44536;
+            font-weight: 700;
+        }
+        .lb-footnote .content .muted {
+            color: #6f8aa8;
+            font-size: 10px;
+        }
+        .lb-footnote .content .divider {
+            display: inline-block;
+            width: 1px;
+            height: 12px;
+            background: rgba(26, 43, 76, 0.1);
+            margin: 0 6px;
+        }
+
+        /* ---- CONTROL PANEL ---- */
+        .control-slider-group {
+            margin: 8px 0 10px;
+        }
+        .control-slider-group:last-of-type { margin-bottom: 8px; }
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+        .slider-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .slider-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffd966;
+            background: rgba(255, 217, 102, 0.12);
+            padding: 0 10px;
+            border-radius: 20px;
+        }
+        .slider-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+        .slider-track::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle, #ffd966, #f5c542);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(255, 217, 102, 0.25);
+            transition: all 0.15s ease;
+        }
+        .slider-track::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 24px rgba(255, 217, 102, 0.35);
+        }
+        .slider-track::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle, #ffd966, #f5c542);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        .slider-hint {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.25);
+            margin-top: 1px;
+        }
+        .slider-hint.warning {
+            color: #ffd966;
+            opacity: 0.6;
+        }
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 4px 0 8px;
+        }
+        .control-row .remaining {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+        .control-row .remaining strong {
+            color: #ffd966;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd966, #f5c542);
+            color: #0a1a2e;
+            box-shadow: 0 4px 20px rgba(255, 217, 102, 0.2);
+            width: 100%;
+            padding: 8px;
+            font-size: 13px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(255, 217, 102, 0.3);
+        }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            font-size: 10px;
+            flex: 0;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        /* LOG */
+        .log-section {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .log-header h4 {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.25);
+        }
+        .log-timer {
+            font-size: 11px;
+            font-weight: 600;
+            color: #8fc8ff;
+            font-variant-numeric: tabular-nums;
+        }
+        .log-panel {
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 10px;
+            padding: 6px 10px;
+            max-height: 56px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 9px;
+            color: rgba(143, 200, 255, 0.7);
+            line-height: 1.5;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .log-panel::-webkit-scrollbar { width: 3px; }
+        .log-panel::-webkit-scrollbar-track { background: transparent; }
+        .log-panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .log-stats {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .log-stat {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .log-stat strong {
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 600;
+        }
+        .log-stat .highlight {
+            color: #ffd966;
+            font-weight: 700;
+        }
+
+        .footer {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(26, 43, 76, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #6f8aa8;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .footer .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #34a853;
+            margin-right: 6px;
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .rank-pulse {
+            animation: rankPulse 0.4s ease;
+        }
+        @keyframes rankPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(26, 43, 76, 0.1); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-icon">📊</div>
+            <h1>FMCG Effort Trade-Off Simulator</h1>
+        </div>
+        <div class="header-badges">
+            <span class="badge badge-live">● LIVE</span>
+            <span class="badge" id="totalHrsDisplay">10 hours total</span>
+        </div>
+    </div>
+
+    <!-- THREE-PANEL GRID -->
+    <div class="three-panel">
+
+        <!-- PANEL 1: METRICS -->
+        <div class="panel-metrics">
+            <div class="panel-title">📈 Your Performance <span class="accent-line"></span></div>
+
+            <div class="metrics-grid">
+                <!-- Individual -->
+                <div class="metric-card individual">
+                    <div class="metric-top">
+                        <span class="metric-label">👤 Individual Rank</span>
+                        <span class="metric-rank-badge" id="indRankDisplay">#12 / 120</span>
+                    </div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">💰 Revenue</span>
+                        <span class="metric-sub-value" id="indRevVal">60%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill green" id="indRevBar" style="width:60%"></div></div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">📈 Margin</span>
+                        <span class="metric-sub-value" id="indMarVal">50%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill blue" id="indMarBar" style="width:50%"></div></div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">🤝 Collaboration</span>
+                        <span class="metric-sub-value" id="indColVal">40%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill orange" id="indColBar" style="width:40%"></div></div>
+                </div>
+
+                <!-- Team -->
+                <div class="metric-card team">
+                    <div class="metric-top">
+                        <span class="metric-label">👥 Team Rank</span>
+                        <span class="metric-rank-badge" id="teamRankDisplay">#15 / 24</span>
+                    </div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">💰 Team Revenue</span>
+                        <span class="metric-sub-value" id="teamRevVal">55%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill green" id="teamRevBar" style="width:55%"></div></div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">📈 Team Margin</span>
+                        <span class="metric-sub-value" id="teamMarVal">48%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill blue" id="teamMarBar" style="width:48%"></div></div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">🤝 Team Synergy</span>
+                        <span class="metric-sub-value" id="teamColVal">70%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill orange" id="teamColBar" style="width:70%"></div></div>
+                </div>
+
+                <!-- Alert -->
+                <div class="alert-box conflict" id="indAlert">
+                    <span class="icon">⚡</span>
+                    <span>Trade-Off: Increasing collaboration hurts your individual rank</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL 2: LEADERBOARD -->
+        <div class="panel-leaderboard">
+            <div class="panel-title">🏆 Live Leaderboard Projection <span class="accent-line"></span></div>
+            <div class="lb-grid">
+                <div class="lb-card" id="indLeaderboard"><h4>👤 Individual (120 total)</h4></div>
+                <div class="lb-card" id="teamLeaderboard" style="max-height: none; overflow-y: visible;"><h4>👥 Team (24 total)</h4></div>
+            </div>
+
+            <!-- UPDATED FOOTNOTE: Heading + Left-aligned content -->
+            <div class="lb-footnote">
+                <div class="heading">📖 How to read the leaderboards:</div>
+                <div class="content">
+                    <div>📌 The leaderboard positions are projected. They may vary based on other participants' efforts.</div>
+                    <div>
+                        <span class="arrow-up">▲</span> = Rank improved 
+                        <span class="divider"></span> 
+                        <span class="arrow-down">▼</span> = Rank declined 
+                        <span class="muted">(compared to your starting position)</span>
+                    </div>
+                    <div>🏅 Only the top 10 individuals and teams are shown.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL 3: CONTROL -->
+        <div class="panel-control">
+            <div class="panel-title">🕹️ Effort Allocation (10 hours) <span class="accent-line"></span></div>
+
+            <div class="control-slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">💰 Revenue</span>
+                    <span class="slider-value" id="revHrsDisplay">4.0 hours</span>
+                </div>
+                <input type="range" class="slider-track" id="revSlider" min="0" max="10" value="4" step="0.5" oninput="updateAllocation()">
+            </div>
+
+            <div class="control-slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">📈 Margin</span>
+                    <span class="slider-value" id="marHrsDisplay">3.0 hours</span>
+                </div>
+                <input type="range" class="slider-track" id="marSlider" min="0" max="10" value="3" step="0.5" oninput="updateAllocation()">
+            </div>
+
+            <div class="control-slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">🤝 Collaboration</span>
+                    <span class="slider-value" id="colHrsDisplay">3.0 hours</span>
+                </div>
+                <input type="range" class="slider-track" id="colSlider" min="0" max="10" value="3" step="0.5" oninput="updateAllocation()">
+                <div class="slider-hint warning">⚠️ Boosts Team but hurts Individual rank</div>
+            </div>
+
+            <div class="control-row">
+                <span class="remaining">Remaining: <strong id="remainingHrs">0.0</strong> hours</span>
+                <button class="btn btn-secondary" onclick="resetAllocation()">↺ Reset</button>
+            </div>
+
+            <button class="btn btn-primary" id="lockBtn" onclick="lockDecision()">🔒 Lock Decision & Continue</button>
+
+            <div class="log-section">
+                <div class="log-header">
+                    <h4>📋 Interaction Log</h4>
+                    <span class="log-timer">⏱️ <span id="timerDisplay">0:00</span></span>
+                </div>
+                <div class="log-panel" id="interactionLog">
+                    <div>⏳ Drag sliders to explore the trade-off...</div>
+                </div>
+                <div class="log-stats">
+                    <span class="log-stat">📊 Changes: <strong id="changeCount">0</strong></span>
+                    <span class="log-stat">🔒 Final: <strong id="finalStatus" style="color:rgba(255,255,255,0.25);">—</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span><span class="dot"></span> Real-time simulation · Individual rank drops as Collaboration increases</span>
+        <span>📊 All interactions logged for behavioral analysis and will be kept confidential</span>
+    </div>
+</div>
+
+<script>
+    // ---- CONFIGURATION ----
+    const COMPETITOR_COUNT = 12;
+    const TEAM_COMPETITOR_COUNT = 12;
+
+    const AVATARS_IND = [
+        { name: "Priya (You)", emoji: "👤" },
+        { name: "Alex", emoji: "👨" }, { name: "Chan", emoji: "👩" }, { name: "Li", emoji: "🧑" },
+        { name: "Lee", emoji: "👩" }, { name: "Sam", emoji: "👨" }, { name: "Kim", emoji: "👩" },
+        { name: "Raj", emoji: "🧑" }, { name: "Mia", emoji: "👩" }, { name: "Eli", emoji: "👨" },
+        { name: "Ari", emoji: "👩" }, { name: "Kai", emoji: "🧑" }
+    ];
+
+    // TEAM NAMES UPDATED to: Alfa, Beta, Gamma, Delta, Epsilon, Zeta, Eta, Theta, Iota, Kappa, Lambda
+    const AVATARS_TEAM = [
+        { name: "Your Team", emoji: "👥" },
+        { name: "Alfa", emoji: "🏢" },
+        { name: "Beta", emoji: "🏢" },
+        { name: "Gamma", emoji: "🏢" },
+        { name: "Delta", emoji: "🏢" },
+        { name: "Epsilon", emoji: "🏢" },
+        { name: "Zeta", emoji: "🏢" },
+        { name: "Eta", emoji: "🏢" },
+        { name: "Theta", emoji: "🏢" },
+        { name: "Iota", emoji: "🏢" },
+        { name: "Kappa", emoji: "🏢" },
+        { name: "Lambda", emoji: "🏢" }
+    ];
+
+    let mockIndCompetitors = [];
+    let mockTeamCompetitors = [];
+
+    function generateMockData() {
+        mockIndCompetitors = [];
+        mockTeamCompetitors = [];
+        for (let i = 1; i < COMPETITOR_COUNT; i++) {
+            mockIndCompetitors.push({ name: AVATARS_IND[i].name, emoji: AVATARS_IND[i].emoji, score: 35 + Math.random() * 55 });
+        }
+        for (let i = 1; i < TEAM_COMPETITOR_COUNT; i++) {
+            mockTeamCompetitors.push({ name: AVATARS_TEAM[i].name, emoji: AVATARS_TEAM[i].emoji, score: 40 + Math.random() * 50 });
+        }
+    }
+    generateMockData();
+
+    // ---- STATE ----
+    let revHrs = 4.0, marHrs = 3.0, colHrs = 3.0;
+    let changeCounter = 0;
+    let isLocked = false;
+    let startTime = Date.now();
+    let timerInterval = null;
+    let logEntries = [];
+    let finalAllocation = null;
+    let initialIndRank = 12;
+    let initialTeamRank = 15;
+
+    const revSlider = document.getElementById('revSlider');
+    const marSlider = document.getElementById('marSlider');
+    const colSlider = document.getElementById('colSlider');
+
+    // ---- TIMER ----
+    function startTimer() {
+        if (timerInterval) return;
+        timerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const secs = String(elapsed % 60).padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = mins + ':' + secs;
+        }, 500);
+    }
+    startTimer();
+
+    // ---- CORE ENGINE ----
+    function calculateUserScores(r, m, c) {
+        let indScore = 50 + (r * 5.0) + (m * 3.5) - (c * 4.5);
+        let teamScore = 40 + (c * 8.0) + (r * 0.5) + (m * 0.5);
+        indScore = Math.min(100, Math.max(10, indScore));
+        teamScore = Math.min(100, Math.max(10, teamScore));
+        return { ind: indScore, team: teamScore };
+    }
+
+    function updateAllocation() {
+        if (isLocked) return;
+
+        revHrs = parseFloat(revSlider.value);
+        marHrs = parseFloat(marSlider.value);
+        colHrs = parseFloat(colSlider.value);
+
+        let total = revHrs + marHrs + colHrs;
+        if (total > 10) {
+            let scale = 10 / total;
+            revHrs = parseFloat((revHrs * scale).toFixed(1));
+            marHrs = parseFloat((marHrs * scale).toFixed(1));
+            colHrs = parseFloat((colHrs * scale).toFixed(1));
+            revSlider.value = revHrs; marSlider.value = marHrs; colSlider.value = colHrs;
+            total = 10;
+        }
+
+        document.getElementById('revHrsDisplay').innerText = revHrs.toFixed(1) + ' hours';
+        document.getElementById('marHrsDisplay').innerText = marHrs.toFixed(1) + ' hours';
+        document.getElementById('colHrsDisplay').innerText = colHrs.toFixed(1) + ' hours';
+        document.getElementById('remainingHrs').innerText = (10 - total).toFixed(1);
+
+        const scores = calculateUserScores(revHrs, marHrs, colHrs);
+        const userIndScore = scores.ind;
+        const userTeamScore = scores.team;
+
+        // Update metric bars
+        const indRev = Math.round(revHrs * 10 + 20);
+        const indMar = Math.round(marHrs * 10 + 15);
+        const indCol = Math.round(colHrs * 10 + 10);
+        document.getElementById('indRevVal').innerText = indRev + '%';
+        document.getElementById('indRevBar').style.width = indRev + '%';
+        document.getElementById('indMarVal').innerText = indMar + '%';
+        document.getElementById('indMarBar').style.width = indMar + '%';
+        document.getElementById('indColVal').innerText = indCol + '%';
+        document.getElementById('indColBar').style.width = indCol + '%';
+
+        const teamRev = Math.round(revHrs * 8 + 20);
+        const teamMar = Math.round(marHrs * 8 + 15);
+        const teamCol = Math.round(colHrs * 12 + 15);
+        document.getElementById('teamRevVal').innerText = teamRev + '%';
+        document.getElementById('teamRevBar').style.width = teamRev + '%';
+        document.getElementById('teamMarVal').innerText = teamMar + '%';
+        document.getElementById('teamMarBar').style.width = teamMar + '%';
+        document.getElementById('teamColVal').innerText = teamCol + '%';
+        document.getElementById('teamColBar').style.width = teamCol + '%';
+
+        // ---- RANK CALCULATION ----
+        let indCompetitors = mockIndCompetitors.map(c => ({ ...c }));
+        indCompetitors.push({ name: AVATARS_IND[0].name, emoji: AVATARS_IND[0].emoji, score: userIndScore, isUser: true });
+        indCompetitors.sort((a, b) => b.score - a.score);
+        const indRank = indCompetitors.findIndex(c => c.isUser) + 1;
+
+        let teamCompetitors = mockTeamCompetitors.map(c => ({ ...c }));
+        teamCompetitors.push({ name: AVATARS_TEAM[0].name, emoji: AVATARS_TEAM[0].emoji, score: userTeamScore, isUser: true });
+        teamCompetitors.sort((a, b) => b.score - a.score);
+        const teamRank = teamCompetitors.findIndex(c => c.isUser) + 1;
+
+        // ---- CALCULATE RANK CHANGE ----
+        const indDiff = initialIndRank - indRank;
+        const teamDiff = initialTeamRank - teamRank;
+
+        // Update rank badges
+        const indRankEl = document.getElementById('indRankDisplay');
+        const teamRankEl = document.getElementById('teamRankDisplay');
+
+        if (indRank !== parseInt(indRankEl.innerText.replace(/#|\s\/\s120/g, ''))) {
+            indRankEl.classList.add('rank-pulse');
+            setTimeout(() => indRankEl.classList.remove('rank-pulse'), 400);
+        }
+        if (teamRank !== parseInt(teamRankEl.innerText.replace(/#|\s\/\s24/g, ''))) {
+            teamRankEl.classList.add('rank-pulse');
+            setTimeout(() => teamRankEl.classList.remove('rank-pulse'), 400);
+        }
+
+        indRankEl.innerText = '#' + indRank + ' / 120';
+        teamRankEl.innerText = '#' + teamRank + ' / 24';
+        indRankEl.className = 'metric-rank-badge' + (indRank <= 4 ? ' up' : (indRank > 10 ? ' down' : ''));
+        teamRankEl.className = 'metric-rank-badge' + (teamRank <= 4 ? ' up' : (teamRank > 10 ? ' down' : ''));
+
+        // Render leaderboards
+        renderLeaderboard('indLeaderboard', indCompetitors, 'individual', indDiff);
+        renderLeaderboard('teamLeaderboard', teamCompetitors, 'team', teamDiff);
+
+        // Alert logic
+        const alertInd = document.getElementById('indAlert');
+        if (colHrs > 5) {
+            alertInd.className = 'alert-box conflict';
+            alertInd.innerHTML = `<span class="icon">⚡</span> Trade-Off Active: Your Individual rank is dropping (#${indRank} / 120) as you spend ${colHrs.toFixed(1)} hours on collaboration.`;
+        } else {
+            alertInd.className = 'alert-box synergy';
+            alertInd.innerHTML = `<span class="icon">⚖️</span> Balanced: Individual rank strong (#${indRank} / 120). Increase collaboration to boost team.`;
+        }
+
+        // Log
+        if (window.lastLogTime && Date.now() - window.lastLogTime < 300) return;
+        window.lastLogTime = Date.now();
+        changeCounter++;
+        document.getElementById('changeCount').innerText = changeCounter;
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const logMsg = `[${elapsed}s] Rev:${revHrs.toFixed(1)}h | Mar:${marHrs.toFixed(1)}h | Col:${colHrs.toFixed(1)}h | Ind:#${indRank} | Team:#${teamRank}`;
+        logEntries.push({ time: elapsed, rev: revHrs, mar: marHrs, col: colHrs, indRank: indRank, teamRank: teamRank });
+        addLog(logMsg);
+    }
+
+    // ---- RENDER LEADERBOARD (TOP 10) ----
+    function renderLeaderboard(containerId, sortedList, type, rankDiff) {
+        const container = document.getElementById(containerId);
+        const totalLabel = type === 'individual' ? ' (120 total)' : ' (24 total)';
+        const headerLabel = type === 'individual' ? '👤 Individual' : '👥 Team';
+        container.innerHTML = `<h4>${headerLabel}${totalLabel}</h4>`;
+
+        // --- ADD HEADER ROW ---
+        const headerRow = document.createElement('div');
+        headerRow.className = 'lb-header';
+        // We need to match the flex layout of lb-row: rank, avatar (spacer), name, score, movement (spacer)
+        headerRow.innerHTML = `
+            <span class="lb-rank">Rank</span>
+            <span style="width:22px; flex-shrink:0;"></span> <!-- spacer for avatar -->
+            <span class="lb-name">Name</span>
+            <span class="lb-score" style="text-align:right;">Score</span>
+            <span style="min-width:30px;"></span> <!-- spacer for movement -->
+        `;
+        container.appendChild(headerRow);
+
+        // --- RENDER TOP 10 ROWS ---
+        const top = sortedList.slice(0, 10);
+        top.forEach((item, idx) => {
+            const row = document.createElement('div');
+            row.className = 'lb-row' + (item.isUser ? ' user' : '');
+            const rank = idx + 1;
+
+            let movementHtml = '';
+            if (item.isUser) {
+                if (rankDiff > 0) {
+                    movementHtml = `<span class="lb-movement up">▲ +${rankDiff}</span>`;
+                } else if (rankDiff < 0) {
+                    movementHtml = `<span class="lb-movement down">▼ ${rankDiff}</span>`;
+                } else {
+                    movementHtml = `<span class="lb-movement flat">–</span>`;
+                }
+            } else {
+                const change = Math.floor(Math.random() * 3) - 1;
+                movementHtml = change > 0 ? `<span class="lb-movement up">▲ +${change}</span>` :
+                               change < 0 ? `<span class="lb-movement down">▼ ${change}</span>` :
+                               `<span class="lb-movement flat">–</span>`;
+            }
+
+            const avatarClass = item.isUser ? 'lb-avatar user-avatar' : 'lb-avatar';
+            const displayName = item.isUser ? 'You' : item.name;
+            row.innerHTML = `
+                <span class="lb-rank">#${rank}</span>
+                <span class="${avatarClass}">${item.isUser ? '👤' : item.emoji}</span>
+                <span class="lb-name">${displayName}</span>
+                <span class="lb-score">${Math.round(item.score)}</span>
+                ${movementHtml}
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function addLog(msg) {
+        const logDiv = document.getElementById('interactionLog');
+        const div = document.createElement('div');
+        div.innerText = msg;
+        div.style.opacity = '0.8';
+        logDiv.appendChild(div);
+        logDiv.scrollTop = logDiv.scrollHeight;
+        if (logDiv.children.length > 15) logDiv.removeChild(logDiv.children[0]);
+    }
+
+    function resetAllocation() {
+        if (isLocked) return;
+        revSlider.value = 4; marSlider.value = 3; colSlider.value = 3;
+        changeCounter = 0;
+        document.getElementById('changeCount').innerText = '0';
+        logEntries = [];
+        document.getElementById('interactionLog').innerHTML = '<div>↺ Reset to default.</div>';
+        addLog('[System] Reset to default.');
+        updateAllocation();
+        const indBadge = document.getElementById('indRankDisplay');
+        const teamBadge = document.getElementById('teamRankDisplay');
+        initialIndRank = parseInt(indBadge.innerText.replace(/#|\s\/\s120/g, ''));
+        initialTeamRank = parseInt(teamBadge.innerText.replace(/#|\s\/\s24/g, ''));
+    }
+
+    function lockDecision() {
+        if (isLocked) return;
+        const total = parseFloat(revHrs) + parseFloat(marHrs) + parseFloat(colHrs);
+        if (Math.abs(total - 10) > 0.1) {
+            alert('Please allocate exactly 10 hours before locking.');
+            return;
+        }
+        isLocked = true;
+        const indRank = document.getElementById('indRankDisplay').innerText;
+        const teamRank = document.getElementById('teamRankDisplay').innerText;
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        finalAllocation = { rev: revHrs, mar: marHrs, col: colHrs, indRank: indRank, teamRank: teamRank, timeTaken: elapsed, sliderHistory: logEntries };
+
+        document.getElementById('finalStatus').innerText = '✅ Locked';
+        document.getElementById('finalStatus').style.color = '#ffd966';
+        document.getElementById('lockBtn').innerHTML = '✅ Locked ✓';
+        document.getElementById('lockBtn').style.opacity = '0.7';
+        document.getElementById('lockBtn').disabled = true;
+        addLog(`🔒 LOCKED | Rev:${revHrs.toFixed(1)}h | Mar:${marHrs.toFixed(1)}h | Col:${colHrs.toFixed(1)}h | Ind:${indRank} | Team:${teamRank} | Time:${mins}m${secs}s`);
+
+        alert(`✅ Decision Locked!\n\nFinal Allocation:\n💰 Revenue: ${revHrs.toFixed(1)} hours\n📈 Margin: ${marHrs.toFixed(1)} hours\n🤝 Collaboration: ${colHrs.toFixed(1)} hours\n\nIndividual Rank: ${indRank}\nTeam Rank: ${teamRank}\n\nTime taken: ${mins}m ${secs}s\n\n(You may now proceed to the survey.)`);
+
+        console.log('📊 FINAL DATA (JSON):', JSON.stringify(finalAllocation, null, 2));
+    }
+
+    // ---- INIT ----
+    window.onload = function() {
+        updateAllocation();
+        const indBadge = document.getElementById('indRankDisplay');
+        const teamBadge = document.getElementById('teamRankDisplay');
+        initialIndRank = parseInt(indBadge.innerText.replace(/#|\s\/\s120/g, ''));
+        initialTeamRank = parseInt(teamBadge.innerText.replace(/#|\s\/\s24/g, ''));
+        addLog('[System] Ready. Starting ranks captured: #' + initialIndRank + ' / #' + initialTeamRank);
+        addLog('[System] Drag sliders to explore the trade-off!');
+    };
+
+    window.getFinalData = function() { return finalAllocation; };
+</script>
+</body>
+</html>
