@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FMCG Effort Trade-Off Simulator — Goal Synergy</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #d9ece0;
+    min-height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+    padding: 20px;
+}
+.container {
+    max-width: 1440px; width: 100%;
+    background: #ffffff; border-radius: 40px;
+    box-shadow: 0 30px 80px rgba(20, 90, 42, 0.14), 0 8px 32px rgba(20, 90, 42, 0.06);
+    padding: 28px;
+    border: 1px solid rgba(180, 230, 200, 0.5);
+}
+.header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 14px;
+    border-bottom: 2px solid rgba(30, 126, 52, 0.15);
+    margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(30, 126, 52, 0.25);
+}
+.header h1 { font-size: 22px; font-weight: 800; color: #145a2a; }
+.badge {
+    background: rgba(30, 126, 52, 0.1); color: #145a2a;
+    font-size: 11px; font-weight: 600;
+    padding: 5px 14px; border-radius: 30px;
+    border: 1px solid rgba(30, 126, 52, 0.15);
+}
+.badge-live {
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    color: white; border: none;
+    animation: pulse-badge 2s infinite;
+}
+.badge-condition {
+    background: rgba(26, 43, 76, 0.08);
+    color: #1a2b4c;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    font-weight: 700;
+}
+@keyframes pulse-badge {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.96); }
+}
+.three-panel {
+    display: grid;
+    grid-template-columns: 0.95fr 1.2fr 0.9fr;
+    gap: 20px;
+    min-height: 480px;
+}
+@media (max-width: 1100px) { .three-panel { grid-template-columns: 1fr; } }
+
+.panel-metrics, .panel-leaderboard {
+    background: linear-gradient(145deg, #f2faf5, #e4f2e9);
+    border-radius: 20px; padding: 16px 18px;
+    border: 1px solid rgba(30, 126, 52, 0.12);
+    box-shadow: 0 4px 16px rgba(30, 126, 52, 0.05);
+}
+.panel-control {
+    background: linear-gradient(160deg, #0a3d1f 0%, #145a2a 100%);
+    color: white; border-radius: 20px;
+    padding: 16px 18px 18px;
+    border: 2px solid #1e7e34;
+    box-shadow: 0 8px 32px rgba(10, 61, 31, 0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.panel-title {
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: #5a8a6a; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+}
+.panel-title .accent-line {
+    flex: 1; height: 2px;
+    background: linear-gradient(90deg, rgba(30, 126, 52, 0.15), transparent);
+}
+.panel-control .panel-title {
+    color: rgba(255, 255, 255, 0.75); margin-bottom: 10px; font-size: 13px;
+}
+.panel-control .panel-title .accent-line {
+    background: linear-gradient(90deg, rgba(122,232,154,0.3), transparent);
+}
+.metrics-grid { display: flex; flex-direction: column; gap: 10px; }
+.metric-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 14px; padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(30, 126, 52, 0.04);
+}
+.metric-card.individual { border-left: 4px solid #1e7e34; }
+.metric-card.team { border-left: 4px solid #2a7f4a; }
+.metric-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 2px;
+}
+.metric-label { font-size: 12px; font-weight: 600; color: #145a2a; }
+.metric-sub {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1px;
+}
+.metric-sub-label { font-size: 11px; font-weight: 400; color: #5a8a6a; }
+.metric-sub-value { font-size: 12px; font-weight: 700; color: #145a2a; }
+.spotlight-star { color: #1e7e34; font-size: 10px; font-weight: 700; margin-left: 3px; }
+.derived-tag { color: #5a8a6a; font-size: 9px; font-style: italic; margin-left: 3px; }
+.progress-track {
+    width: 100%; height: 5px;
+    background: rgba(20, 90, 42, 0.08);
+    border-radius: 10px; overflow: hidden; margin: 3px 0 1px;
+}
+.progress-fill { height: 100%; border-radius: 10px; transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.progress-fill.green { background: linear-gradient(90deg, #1e7e34, #34a853); }
+.progress-fill.blue  { background: linear-gradient(90deg, #1a5a8a, #2a7fc9); }
+.progress-fill.orange{ background: linear-gradient(90deg, #c97a2b, #e8a34a); }
+.progress-fill.purple{ background: linear-gradient(90deg, #6a4c93, #8b6bb5); }
+.progress-fill.teal  { background: linear-gradient(90deg, #0e7c7b, #2ea8a6); }
+.metric-rank-badge {
+    font-size: 12px; font-weight: 700;
+    padding: 2px 12px; border-radius: 20px;
+    background: rgba(30, 126, 52, 0.08); color: #145a2a;
+    transition: all 0.3s ease;
+}
+.metric-rank-badge.up   { background: rgba(30, 126, 52, 0.15); color: #1e7e34; }
+.metric-rank-badge.down { background: rgba(196, 69, 54, 0.12); color: #c44536; }
+.alert-box {
+    margin-top: 6px; padding: 8px 12px; border-radius: 10px;
+    font-size: 11px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(30, 126, 52, 0.2);
+    background: rgba(230, 245, 234, 0.8); color: #145a2a;
+    transition: all 0.4s ease;
+}
+.alert-box .icon { font-size: 14px; color: #1e7e34; }
+
+.lb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.lb-card {
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 12px; padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(26, 43, 76, 0.03);
+}
+.lb-card h4 {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    color: #5a8a6a; margin-bottom: 4px; padding-bottom: 3px;
+    border-bottom: 1px solid rgba(30, 126, 52, 0.08);
+}
+.lb-header {
+    display: flex; align-items: center;
+    padding: 2px 4px 4px 4px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px; color: #4a7a5a;
+    border-bottom: 1px solid rgba(30, 126, 52, 0.1); margin-bottom: 2px;
+}
+.lb-row {
+    display: flex; align-items: center;
+    padding: 3px 4px; border-radius: 6px;
+    font-size: 11px; gap: 4px; transition: all 0.15s ease;
+}
+.lb-row:hover { background: rgba(30, 126, 52, 0.04); }
+.lb-row.user {
+    background: rgba(255, 217, 102, 0.25);
+    border-left: 3px solid #ffd966; border-radius: 6px 0 0 6px;
+}
+.lb-rank { font-weight: 700; color: #5a8a6a; min-width: 24px; font-size: 10px; }
+.lb-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: linear-gradient(135deg, #e6edf6, #f0f4fa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: #1a2b4c; flex-shrink: 0;
+}
+.lb-avatar.user-avatar {
+    background: linear-gradient(135deg, #ffd966, #f7c948); color: #0a1a2e;
+}
+.lb-name {
+    flex: 1; color: #1a2b4c; font-size: 11px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lb-score { font-weight: 700; color: #0a1a2e; font-size: 11px; min-width: 24px; text-align: right; }
+.lb-movement {
+    font-size: 9px; font-weight: 700;
+    padding: 1px 6px; border-radius: 10px;
+    min-width: 30px; text-align: center;
+}
+.lb-movement.up   { background: rgba(30, 126, 52, 0.12); color: #1e7e34; }
+.lb-movement.down { background: rgba(196, 69, 54, 0.12); color: #c44536; }
+.lb-movement.flat { color: #6f8aa8; font-weight: 400; }
+.lb-footnote {
+    margin-top: 10px; padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.85); border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 12px rgba(26, 43, 76, 0.04);
+    text-align: left;
+}
+.lb-footnote .heading { font-weight: 700; font-size: 12px; color: #0a1a2e; margin-bottom: 6px; }
+.lb-footnote .content { font-size: 10.5px; color: #3d5775; line-height: 1.8; }
+.lb-footnote .content .arrow-up   { color: #1e7e34; font-weight: 700; }
+.lb-footnote .content .arrow-down { color: #c44536; font-weight: 700; }
+.lb-footnote .content .muted      { color: #6f8aa8; font-size: 10px; }
+.lb-footnote .content .divider {
+    display: inline-block; width: 1px; height: 12px;
+    background: rgba(26, 43, 76, 0.1); margin: 0 6px;
+}
+
+.control-slider-group { margin: 12px 0 16px; }
+.slider-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 3px;
+}
+.slider-label { font-size: 13px; font-weight: 600; color: #ffffff; }
+.slider-sub   { font-size: 10px; color: rgba(255,255,255,0.55); font-weight: 400; margin-left: 4px; }
+.slider-value {
+    font-size: 13px; font-weight: 700; color: #0a3d1f;
+    background: #7ae89a; padding: 2px 14px; border-radius: 20px;
+}
+.slider-track {
+    width: 100%; height: 8px; background: rgba(255,255,255,0.15);
+    border-radius: 10px; -webkit-appearance: none; outline: none;
+}
+.slider-track::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    background: radial-gradient(circle, #ffffff, #7ae89a);
+    border-radius: 50%; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(122, 232, 154, 0.5);
+    transition: all 0.15s ease;
+}
+.slider-track::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.slider-track::-moz-range-thumb {
+    width: 22px; height: 22px;
+    background: radial-gradient(circle, #ffffff, #7ae89a);
+    border-radius: 50%; cursor: pointer; border: none;
+}
+.derived-panel {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px dashed rgba(122, 232, 154, 0.25);
+    border-radius: 12px; padding: 10px 12px; margin: 12px 0 14px;
+}
+.derived-panel .derived-title {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: #7ae89a; margin-bottom: 8px;
+}
+.derived-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 4px 0; font-size: 11px;
+}
+.derived-row .d-label { color: rgba(255,255,255,0.8); }
+.derived-row .d-bar {
+    flex: 1; margin: 0 8px; height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px; overflow: hidden;
+}
+.derived-row .d-fill { height: 100%; border-radius: 10px; transition: width 0.3s ease; }
+.derived-row .d-val { color: #ffffff; font-weight: 700; min-width: 32px; text-align: right; font-size: 10px; }
+
+.btn { padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+.btn-primary {
+    background: #7ae89a; color: #0a3d1f;
+    box-shadow: 0 4px 20px rgba(122, 232, 154, 0.35);
+    width: 100%; padding: 12px; font-size: 14px;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(122, 232, 154, 0.45); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-secondary {
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 4px 12px; font-size: 10px;
+}
+.log-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); }
+.log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.log-header h4 {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: rgba(255,255,255,0.6);
+}
+.log-timer { font-size: 11px; font-weight: 600; color: #7ae89a; font-variant-numeric: tabular-nums; }
+.log-panel {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 10px; padding: 6px 10px;
+    max-height: 56px; overflow-y: auto;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    font-size: 9px; color: rgba(200, 240, 210, 0.85);
+    line-height: 1.5; border: 1px solid rgba(122, 232, 154, 0.15);
+}
+.log-stats { display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap; }
+.log-stat {
+    font-size: 10px; color: rgba(255,255,255,0.5);
+    display: flex; align-items: center; gap: 4px;
+}
+.log-stat strong { color: #ffffff; font-weight: 700; }
+
+.footer {
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px solid rgba(30, 126, 52, 0.1);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: #5a8a6a; flex-wrap: wrap; gap: 8px;
+}
+.footer .dot {
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: #34a853;
+    margin-right: 6px; animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.rank-pulse { animation: rankPulse 0.4s ease; }
+@keyframes rankPulse {
+    0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); }
+}
+
+/* MODAL */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10, 30, 18, 0.55);
+    backdrop-filter: blur(6px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.modal-overlay.show { opacity: 1; visibility: visible; }
+.modal-card {
+    background: #ffffff; border-radius: 24px;
+    padding: 32px 36px; max-width: 480px; width: 90%;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+    border: 2px solid #1e7e34;
+    transform: translateY(10px) scale(0.97);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.modal-overlay.show .modal-card { transform: translateY(0) scale(1); }
+.modal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.modal-header .modal-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(30, 126, 52, 0.25);
+}
+.modal-header h3 { font-size: 19px; font-weight: 800; color: #145a2a; letter-spacing: -0.01em; }
+.modal-body { font-size: 13.5px; color: #3d5775; line-height: 1.65; margin-bottom: 22px; }
+.modal-body .summary {
+    background: linear-gradient(145deg, #f2faf5, #e4f2e9);
+    border-radius: 12px; padding: 12px 16px; margin: 14px 0;
+    border: 1px solid rgba(30, 126, 52, 0.15); font-size: 12.5px;
+}
+.modal-body .summary .row { display: flex; justify-content: space-between; padding: 3px 0; }
+.modal-body .summary .row strong { color: #145a2a; font-weight: 700; }
+.modal-body .warning-text { color: #7a2e1f; font-weight: 600; font-size: 12.5px; margin-top: 8px; }
+.modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+.modal-btn {
+    padding: 12px 26px; border-radius: 30px;
+    font-weight: 700; font-size: 14px;
+    border: none; cursor: pointer;
+    transition: all 0.2s ease; font-family: inherit;
+}
+.modal-btn-cancel {
+    background: #f0f4fa; color: #3d5775;
+    border: 1.5px solid #cddae9;
+}
+.modal-btn-cancel:hover { background: #e2eaf5; transform: translateY(-1px); }
+.modal-btn-confirm {
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    color: white; box-shadow: 0 4px 16px rgba(30, 126, 52, 0.35);
+}
+.modal-btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(30, 126, 52, 0.45); }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-icon">📊</div>
+            <h1>FMCG Effort Trade-Off Simulator</h1>
+        </div>
+        <div class="header-badges" style="display:flex; gap:10px; align-items:center;">
+            <span class="badge badge-live">● LIVE</span>
+            <span class="badge badge-condition">GOAL SYNERGY</span>
+            <span class="badge">10 hours budget</span>
+        </div>
+    </div>
+
+    <div class="three-panel">
+        <div class="panel-metrics">
+            <div class="panel-title">📈 Your Performance <span class="accent-line"></span></div>
+            <div class="metrics-grid">
+                <div class="metric-card individual">
+                    <div class="metric-top">
+                        <span class="metric-label">👤 Individual Rank</span>
+                        <span class="metric-rank-badge" id="indRankDisplay">#12 / 120</span>
+                    </div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">💰 Revenue <span class="spotlight-star">★ spotlighted</span></span>
+                        <span class="metric-sub-value" id="indRevVal">50%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill green" id="indRevBar" style="width:50%"></div></div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">📈 Margin <span class="derived-tag">(derived)</span></span>
+                        <span class="metric-sub-value" id="indMarVal">50%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill blue" id="indMarBar" style="width:50%"></div></div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">📊 Consistency <span class="derived-tag">(derived)</span></span>
+                        <span class="metric-sub-value" id="indConVal">50%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill purple" id="indConBar" style="width:50%"></div></div>
+                </div>
+
+                <div class="metric-card team">
+                    <div class="metric-top">
+                        <span class="metric-label">👥 Team Rank</span>
+                        <span class="metric-rank-badge" id="teamRankDisplay">#15 / 24</span>
+                    </div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">🤝 Collaboration <span class="spotlight-star">★ spotlighted</span></span>
+                        <span class="metric-sub-value" id="teamColVal">50%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill orange" id="teamColBar" style="width:50%"></div></div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">⭐ Customer Satisfaction <span class="derived-tag">(derived)</span></span>
+                        <span class="metric-sub-value" id="teamCsatVal">50%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill blue" id="teamCsatBar" style="width:50%"></div></div>
+                    <div class="metric-sub">
+                        <span class="metric-sub-label">🔁 Customer Retention <span class="derived-tag">(derived)</span></span>
+                        <span class="metric-sub-value" id="teamRetVal">50%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill teal" id="teamRetBar" style="width:50%"></div></div>
+                </div>
+
+                <div class="alert-box" id="indAlert">
+                    <span class="icon">💡</span>
+                    <span id="alertText">Adjust the sliders to see how your ranks respond.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-leaderboard">
+            <div class="panel-title">🏆 Live Leaderboard Projection <span class="accent-line"></span></div>
+            <div class="lb-grid">
+                <div class="lb-card" id="indLeaderboard"><h4>👤 Individual (120)</h4></div>
+                <div class="lb-card" id="teamLeaderboard"><h4>👥 Team (24)</h4></div>
+            </div>
+            <div class="lb-footnote">
+                <div class="heading">📖 How to read the leaderboards:</div>
+                <div class="content">
+                    <div>📌 The leaderboard positions are projected. They may vary based on other participants' efforts.</div>
+                    <div>
+                        <span class="arrow-up">▲</span> = Rank improved
+                        <span class="divider"></span>
+                        <span class="arrow-down">▼</span> = Rank declined
+                        <span class="muted">(compared to your starting position)</span>
+                    </div>
+                    <div>🏅 Only the top 10 individuals and teams are shown.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-control">
+            <div class="panel-title">🕹️ Effort Allocation (10 hours) <span class="accent-line"></span></div>
+
+            <div class="control-slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">💰 Revenue <span class="slider-sub">(Individual)</span></span>
+                    <span class="slider-value" id="revHrsDisplay">3.0 hours</span>
+                </div>
+                <input type="range" class="slider-track" id="revSlider" min="0" max="10" value="3" step="0.5">
+            </div>
+
+            <div class="control-slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">🤝 Collaboration <span class="slider-sub">(Team)</span></span>
+                    <span class="slider-value" id="colHrsDisplay">3.0 hours</span>
+                </div>
+                <input type="range" class="slider-track" id="colSlider" min="0" max="10" value="3" step="0.5">
+            </div>
+
+            <div class="derived-panel">
+                <div class="derived-title">📌 Derived Metrics (auto-updated)</div>
+                <div class="derived-row">
+                    <span class="d-label">⭐ CSAT</span>
+                    <div class="d-bar"><div class="d-fill" id="dCsatBar" style="width:50%;background:linear-gradient(90deg,#1e7e34,#34a853);"></div></div>
+                    <span class="d-val" id="dCsatVal">50%</span>
+                </div>
+                <div class="derived-row">
+                    <span class="d-label">🔁 Retention</span>
+                    <div class="d-bar"><div class="d-fill" id="dRetBar" style="width:50%;background:linear-gradient(90deg,#0e7c7b,#2ea8a6);"></div></div>
+                    <span class="d-val" id="dRetVal">50%</span>
+                </div>
+                <div class="derived-row">
+                    <span class="d-label">📈 Margin</span>
+                    <div class="d-bar"><div class="d-fill" id="dMarBar" style="width:50%;background:linear-gradient(90deg,#2a7fc9,#4a8bc2);"></div></div>
+                    <span class="d-val" id="dMarVal">50%</span>
+                </div>
+                <div class="derived-row">
+                    <span class="d-label">📊 Consistency</span>
+                    <div class="d-bar"><div class="d-fill" id="dConBar" style="width:50%;background:linear-gradient(90deg,#c97a2b,#e8a34a);"></div></div>
+                    <span class="d-val" id="dConVal">50%</span>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin:8px 0 12px;">
+                <span style="font-size:11px; color:rgba(255,255,255,0.6);">
+                    Allocated: <strong id="totalUsed" style="color:#7ae89a;">6.0</strong> / 10 hours
+                </span>
+                <button class="btn btn-secondary" onclick="resetAllocation()">↺ Reset</button>
+            </div>
+
+            <button class="btn btn-primary" id="lockBtn" onclick="openConfirmModal()">🔒 Lock Decision & Continue</button>
+
+            <div class="log-section">
+                <div class="log-header">
+                    <h4>📋 Interaction Log</h4>
+                    <span class="log-timer">⏱️ <span id="timerDisplay">0:00</span></span>
+                </div>
+                <div class="log-panel" id="interactionLog">
+                    <div>⏳ Drag sliders to explore...</div>
+                </div>
+                <div class="log-stats">
+                    <span class="log-stat">📊 Changes: <strong id="changeCount">0</strong></span>
+                    <span class="log-stat">🔒 Final: <strong id="finalStatus">—</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span><span class="dot"></span> Every hour you invest lifts BOTH scores — total budget capped at 10 hours</span>
+        <span>📊 All interactions logged for behavioral analysis and will be kept confidential</span>
+    </div>
+</div>
+
+<!-- CONFIRMATION MODAL -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-icon">🔒</div>
+            <h3>Confirm Your Allocation</h3>
+        </div>
+        <div class="modal-body">
+            You are about to lock in your effort allocation for the quarter.
+            <div class="summary" id="modalSummary">
+                <div class="row"><span>💰 Revenue (Individual)</span><strong id="modalRev">3.0 hours</strong></div>
+                <div class="row"><span>🤝 Collaboration (Team)</span><strong id="modalCol">3.0 hours</strong></div>
+                <div class="row" style="border-top:1px dashed rgba(30,126,52,0.2); margin-top:6px; padding-top:6px;">
+                    <span>👤 Projected Individual Rank</span><strong id="modalIndRank">#12 / 120</strong>
+                </div>
+                <div class="row"><span>👥 Projected Team Rank</span><strong id="modalTeamRank">#15 / 24</strong></div>
+            </div>
+            <div class="warning-text">⚠️ Once confirmed, this allocation cannot be changed.</div>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn modal-btn-cancel" onclick="cancelLock()">← Cancel</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmLock()">OK, Lock It In ✓</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   CONDITION: GOAL SYNERGY
+   ─────────────────────────────────────────────────────────────────
+   Gains on EITHER side lift BOTH scores.
+   - Revenue is the PRIMARY driver for Individual + a SECONDARY
+     driver for Team.
+   - Collaboration is the PRIMARY driver for Team + a SECONDARY
+     driver for Individual.
+   "Everything helps."
+   ═══════════════════════════════════════════════════════════════════ */
+const CONDITION = 'synergy';
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHARED SETUP
+   ═══════════════════════════════════════════════════════════════════ */
+const COMPETITOR_COUNT = 12;
+const TEAM_COMPETITOR_COUNT = 12;
+
+const AVATARS_IND = [
+    { name: "Priya (You)", emoji: "👤" },
+    { name: "Alex", emoji: "👨" }, { name: "Chan", emoji: "👩" }, { name: "Li", emoji: "🧑" },
+    { name: "Lee", emoji: "👩" },  { name: "Sam", emoji: "👨" }, { name: "Kim", emoji: "👩" },
+    { name: "Raj", emoji: "🧑" },  { name: "Mia", emoji: "👩" }, { name: "Eli", emoji: "👨" },
+    { name: "Ari", emoji: "👩" },  { name: "Kai", emoji: "🧑" }
+];
+const AVATARS_TEAM = [
+    { name: "Your Team", emoji: "👥" },
+    { name: "Alfa", emoji: "🏢" }, { name: "Beta", emoji: "🏢" }, { name: "Gamma", emoji: "🏢" },
+    { name: "Delta", emoji: "🏢" }, { name: "Epsilon", emoji: "🏢" }, { name: "Zeta", emoji: "🏢" },
+    { name: "Eta", emoji: "🏢" }, { name: "Theta", emoji: "🏢" }, { name: "Iota", emoji: "🏢" },
+    { name: "Kappa", emoji: "🏢" }, { name: "Lambda", emoji: "🏢" }
+];
+
+let mockIndCompetitors = [], mockTeamCompetitors = [];
+function generateMockData() {
+    mockIndCompetitors = []; mockTeamCompetitors = [];
+    for (let i = 1; i < COMPETITOR_COUNT; i++)
+        mockIndCompetitors.push({ name: AVATARS_IND[i].name, emoji: AVATARS_IND[i].emoji, score: 30 + Math.random() * 55 });
+    for (let i = 1; i < TEAM_COMPETITOR_COUNT; i++)
+        mockTeamCompetitors.push({ name: AVATARS_TEAM[i].name, emoji: AVATARS_TEAM[i].emoji, score: 30 + Math.random() * 55 });
+}
+generateMockData();
+
+let revHrs = 3.0, colHrs = 3.0;
+let changeCounter = 0, isLocked = false;
+let startTime = Date.now(), timerInterval = null;
+let logEntries = [], finalAllocation = null;
+let initialIndRank = 12, initialTeamRank = 15;
+
+// Cache for score-change detection (so we only re-render what actually changed)
+let lastIndScore = null;
+let lastTeamScore = null;
+
+const revSlider = document.getElementById('revSlider');
+const colSlider = document.getElementById('colSlider');
+const modal = document.getElementById('confirmModal');
+
+function startTimer() {
+    if (timerInterval) return;
+    timerInterval = setInterval(() => {
+        const e = Math.floor((Date.now() - startTime) / 1000);
+        const m = String(Math.floor(e / 60)).padStart(2, '0');
+        const s = String(e % 60).padStart(2, '0');
+        document.getElementById('timerDisplay').innerText = m + ':' + s;
+    }, 500);
+}
+startTimer();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   CORE FORMULAS — SYNERGY
+   ─────────────────────────────────────────────────────────────────
+   Both scores depend on BOTH inputs. Every slider tick lifts both.
+   Revenue is primary for Individual; Collaboration is primary for Team.
+   The cross-effect (secondary driver) makes both sides move together.
+   ═══════════════════════════════════════════════════════════════════ */
+function calculateUserScores(r, c) {
+    // Individual: Revenue primary (×4.0), Collaboration secondary (×2.0)
+    // Team:       Collaboration primary (×4.0), Revenue secondary (×2.0)
+    let indScore  = 20 + (r * 4.0) + (c * 2.0);
+    let teamScore = 20 + (c * 4.0) + (r * 2.0);
+    indScore  = Math.min(100, Math.max(10, indScore));
+    teamScore = Math.min(100, Math.max(10, teamScore));
+    return { ind: indScore, team: teamScore };
+}
+
+function calculateDerivedMetrics(r, c) {
+    // Every derived metric also benefits from BOTH inputs, reinforcing
+    // the synergy message throughout the dashboard.
+    return {
+        margin:      Math.min(100, Math.max(10, 20 + (r * 3.0) + (c * 2.0))),
+        consistency: Math.min(100, Math.max(10, 20 + (r * 2.0) + (c * 3.0))),
+        csat:        Math.min(100, Math.max(10, 20 + (r * 2.0) + (c * 3.0))),
+        retention:   Math.min(100, Math.max(10, 20 + (r * 2.0) + (c * 3.0)))
+    };
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   SLIDER HANDLERS — INDEPENDENT MOVEMENT
+   ─────────────────────────────────────────────────────────────────
+   Moving one slider NEVER touches the other slider's value.
+   A slider only caps ITSELF so the total stays ≤ 10 hours.
+   ═══════════════════════════════════════════════════════════════════ */
+revSlider.addEventListener('input', function () {
+    let newRev = parseFloat(this.value);
+    const maxRev = 10 - colHrs;
+    if (newRev > maxRev) {
+        newRev = Math.max(0, maxRev);
+        this.value = newRev;
+    }
+    revHrs = newRev;
+    // colHrs is NEVER touched
+    updateAllocation();
+});
+
+colSlider.addEventListener('input', function () {
+    let newCol = parseFloat(this.value);
+    const maxCol = 10 - revHrs;
+    if (newCol > maxCol) {
+        newCol = Math.max(0, maxCol);
+        this.value = newCol;
+    }
+    colHrs = newCol;
+    // revHrs is NEVER touched
+    updateAllocation();
+});
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   UPDATE ALLOCATION
+   ═══════════════════════════════════════════════════════════════════ */
+function updateAllocation() {
+    if (isLocked) return;
+
+    document.getElementById('revHrsDisplay').innerText = revHrs.toFixed(1) + ' hours';
+    document.getElementById('colHrsDisplay').innerText = colHrs.toFixed(1) + ' hours';
+    document.getElementById('totalUsed').innerText = (revHrs + colHrs).toFixed(1);
+
+    const scores  = calculateUserScores(revHrs, colHrs);
+    const derived = calculateDerivedMetrics(revHrs, colHrs);
+
+    // Detect which side changed (both will usually change in synergy)
+    const indChanged  = (lastIndScore  === null) || Math.abs(scores.ind  - lastIndScore)  > 0.001;
+    const teamChanged = (lastTeamScore === null) || Math.abs(scores.team - lastTeamScore) > 0.001;
+
+    /* ─── INDIVIDUAL SIDE ─── */
+    if (indChanged) {
+        document.getElementById('indRevVal').innerText  = Math.round(revHrs * 8 + 20) + '%';
+        document.getElementById('indRevBar').style.width = (revHrs * 8 + 20) + '%';
+        document.getElementById('indMarVal').innerText  = Math.round(derived.margin) + '%';
+        document.getElementById('indMarBar').style.width = derived.margin + '%';
+        document.getElementById('indConVal').innerText  = Math.round(derived.consistency) + '%';
+        document.getElementById('indConBar').style.width = derived.consistency + '%';
+
+        let indCompetitors = mockIndCompetitors.map(x => ({ ...x }));
+        indCompetitors.push({ name: AVATARS_IND[0].name, emoji: AVATARS_IND[0].emoji, score: scores.ind, isUser: true });
+        indCompetitors.sort((a, b) => b.score - a.score);
+        const indRank = indCompetitors.findIndex(x => x.isUser) + 1;
+
+        const indDiff = initialIndRank - indRank;
+        const indRankEl = document.getElementById('indRankDisplay');
+
+        if (indRank !== parseInt(indRankEl.innerText.replace(/#|\s\/\s120/g, ''))) {
+            indRankEl.classList.add('rank-pulse');
+            setTimeout(() => indRankEl.classList.remove('rank-pulse'), 400);
+        }
+        indRankEl.innerText  = '#' + indRank + ' / 120';
+        indRankEl.className  = 'metric-rank-badge' + (indRank <= 4 ? ' up' : (indRank > 10 ? ' down' : ''));
+
+        renderLeaderboard('indLeaderboard', indCompetitors, 'individual', indDiff);
+    }
+
+    /* ─── TEAM SIDE ─── */
+    if (teamChanged) {
+        document.getElementById('teamColVal').innerText  = Math.round(colHrs * 8 + 20) + '%';
+        document.getElementById('teamColBar').style.width = (colHrs * 8 + 20) + '%';
+        document.getElementById('teamCsatVal').innerText  = Math.round(derived.csat) + '%';
+        document.getElementById('teamCsatBar').style.width = derived.csat + '%';
+        document.getElementById('teamRetVal').innerText  = Math.round(derived.retention) + '%';
+        document.getElementById('teamRetBar').style.width = derived.retention + '%';
+
+        let teamCompetitors = mockTeamCompetitors.map(x => ({ ...x }));
+        teamCompetitors.push({ name: AVATARS_TEAM[0].name, emoji: AVATARS_TEAM[0].emoji, score: scores.team, isUser: true });
+        teamCompetitors.sort((a, b) => b.score - a.score);
+        const teamRank = teamCompetitors.findIndex(x => x.isUser) + 1;
+
+        const teamDiff = initialTeamRank - teamRank;
+        const teamRankEl = document.getElementById('teamRankDisplay');
+
+        if (teamRank !== parseInt(teamRankEl.innerText.replace(/#|\s\/\s24/g, ''))) {
+            teamRankEl.classList.add('rank-pulse');
+            setTimeout(() => teamRankEl.classList.remove('rank-pulse'), 400);
+        }
+        teamRankEl.innerText = '#' + teamRank + ' / 24';
+        teamRankEl.className = 'metric-rank-badge' + (teamRank <= 4 ? ' up' : (teamRank > 10 ? ' down' : ''));
+
+        renderLeaderboard('teamLeaderboard', teamCompetitors, 'team', teamDiff);
+    }
+
+    // Cache for next comparison
+    lastIndScore  = scores.ind;
+    lastTeamScore = scores.team;
+
+    /* ─── Derived metrics preview ─── */
+    document.getElementById('dCsatVal').innerText = Math.round(derived.csat) + '%';
+    document.getElementById('dCsatBar').style.width = derived.csat + '%';
+    document.getElementById('dRetVal').innerText = Math.round(derived.retention) + '%';
+    document.getElementById('dRetBar').style.width = derived.retention + '%';
+    document.getElementById('dMarVal').innerText = Math.round(derived.margin) + '%';
+    document.getElementById('dMarBar').style.width = derived.margin + '%';
+    document.getElementById('dConVal').innerText = Math.round(derived.consistency) + '%';
+    document.getElementById('dConBar').style.width = derived.consistency + '%';
+
+    /* ─── Alert message ─── */
+    const totalAllocated = revHrs + colHrs;
+    let alertMsg;
+    if (totalAllocated < 10) {
+        alertMsg = `You have allocated ${totalAllocated.toFixed(1)} of 10 hours. Every additional hour lifts BOTH scores — increase either slider and watch the other side respond too.`;
+    } else {
+        alertMsg = `All 10 hours allocated. Every hour is currently reinforcing both scores.`;
+    }
+    document.getElementById('alertText').innerText = alertMsg;
+
+    /* ─── Log ─── */
+    if (window.lastLogTime && Date.now() - window.lastLogTime < 300) return;
+    window.lastLogTime = Date.now();
+    changeCounter++;
+    document.getElementById('changeCount').innerText = changeCounter;
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const indRankNow  = document.getElementById('indRankDisplay').innerText;
+    const teamRankNow = document.getElementById('teamRankDisplay').innerText;
+    logEntries.push({ time: elapsed, rev: revHrs, col: colHrs, indRank: indRankNow, teamRank: teamRankNow });
+    addLog(`[${elapsed}s] Rev:${revHrs.toFixed(1)}h | Col:${colHrs.toFixed(1)}h | Ind:${indRankNow} | Team:${teamRankNow}`);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDER LEADERBOARD — deterministic competitor arrows
+   ═══════════════════════════════════════════════════════════════════ */
+function renderLeaderboard(containerId, sortedList, type, rankDiff) {
+    const container = document.getElementById(containerId);
+    const headerLabel = type === 'individual' ? '👤 Individual' : '👥 Team';
+    const totalLabel  = type === 'individual' ? ' (120)' : ' (24)';
+    container.innerHTML = `<h4>${headerLabel}${totalLabel}</h4>`;
+
+    const headerRow = document.createElement('div');
+    headerRow.className = 'lb-header';
+    headerRow.innerHTML = `
+        <span class="lb-rank">Rank</span>
+        <span style="width:22px; flex-shrink:0;"></span>
+        <span class="lb-name">Name</span>
+        <span class="lb-score" style="text-align:right;">Score</span>
+        <span style="min-width:30px;"></span>`;
+    container.appendChild(headerRow);
+
+    const top = sortedList.slice(0, 10);
+    top.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'lb-row' + (item.isUser ? ' user' : '');
+        const rank = idx + 1;
+
+        let movementHtml = '';
+        if (item.isUser) {
+            if (rankDiff > 0)      movementHtml = `<span class="lb-movement up">▲ +${rankDiff}</span>`;
+            else if (rankDiff < 0) movementHtml = `<span class="lb-movement down">▼ ${rankDiff}</span>`;
+            else                   movementHtml = `<span class="lb-movement flat">–</span>`;
+        } else {
+            movementHtml = `<span class="lb-movement flat">–</span>`;
+        }
+
+        const avatarClass = item.isUser ? 'lb-avatar user-avatar' : 'lb-avatar';
+        const displayName = item.isUser ? 'You' : item.name;
+        row.innerHTML = `
+            <span class="lb-rank">#${rank}</span>
+            <span class="${avatarClass}">${item.isUser ? '👤' : item.emoji}</span>
+            <span class="lb-name">${displayName}</span>
+            <span class="lb-score">${Math.round(item.score)}</span>
+            ${movementHtml}`;
+        container.appendChild(row);
+    });
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
+function addLog(msg) {
+    const logDiv = document.getElementById('interactionLog');
+    const div = document.createElement('div');
+    div.innerText = msg;
+    div.style.opacity = '0.9';
+    logDiv.appendChild(div);
+    logDiv.scrollTop = logDiv.scrollHeight;
+    if (logDiv.children.length > 15) logDiv.removeChild(logDiv.children[0]);
+}
+
+function resetAllocation() {
+    if (isLocked) return;
+    revSlider.value = 3; colSlider.value = 3;
+    revHrs = 3.0; colHrs = 3.0;
+    changeCounter = 0;
+    document.getElementById('changeCount').innerText = '0';
+    logEntries = [];
+    document.getElementById('interactionLog').innerHTML = '<div>↺ Reset to default (3h / 3h).</div>';
+    addLog('[System] Reset to default.');
+
+    lastIndScore = null;
+    lastTeamScore = null;
+
+    updateAllocation();
+    const indBadge  = document.getElementById('indRankDisplay');
+    const teamBadge = document.getElementById('teamRankDisplay');
+    initialIndRank  = parseInt(indBadge.innerText.replace(/#|\s\/\s120/g, ''));
+    initialTeamRank = parseInt(teamBadge.innerText.replace(/#|\s\/\s24/g, ''));
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL HANDLERS
+   ═══════════════════════════════════════════════════════════════════ */
+function openConfirmModal() {
+    if (isLocked) return;
+    document.getElementById('modalRev').innerText      = revHrs.toFixed(1) + ' hours';
+    document.getElementById('modalCol').innerText      = colHrs.toFixed(1) + ' hours';
+    document.getElementById('modalIndRank').innerText  = document.getElementById('indRankDisplay').innerText;
+    document.getElementById('modalTeamRank').innerText = document.getElementById('teamRankDisplay').innerText;
+    modal.classList.add('show');
+    addLog(`[System] Confirmation modal opened.`);
+}
+
+function cancelLock() {
+    modal.classList.remove('show');
+    addLog(`[System] Lock cancelled — returning to sliders.`);
+    setTimeout(() => revSlider.focus(), 250);
+}
+
+function confirmLock() {
+    modal.classList.remove('show');
+    setTimeout(() => {
+        if (isLocked) return;
+        isLocked = true;
+
+        const indRank  = document.getElementById('indRankDisplay').innerText;
+        const teamRank = document.getElementById('teamRankDisplay').innerText;
+        const elapsed  = Math.floor((Date.now() - startTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+
+        finalAllocation = {
+            condition: CONDITION,
+            rev: revHrs, col: colHrs,
+            indRank, teamRank,
+            timeTaken: elapsed,
+            sliderHistory: logEntries
+        };
+
+        document.getElementById('finalStatus').innerText = '✅ Locked';
+        document.getElementById('finalStatus').style.color = '#7ae89a';
+        const lockBtn = document.getElementById('lockBtn');
+        lockBtn.innerHTML = '✅ Locked ✓';
+        lockBtn.disabled = true;
+
+        addLog(`🔒 LOCKED | Rev:${revHrs.toFixed(1)}h | Col:${colHrs.toFixed(1)}h | Ind:${indRank} | Team:${teamRank}`);
+
+        console.log('📊 FINAL DATA:', JSON.stringify(finalAllocation, null, 2));
+    }, 300);
+}
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.classList.contains('show')) cancelLock();
+});
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════════════ */
+window.onload = function () {
+    lastIndScore = null;
+    lastTeamScore = null;
+    updateAllocation();
+    const indBadge  = document.getElementById('indRankDisplay');
+    const teamBadge = document.getElementById('teamRankDisplay');
+    initialIndRank  = parseInt(indBadge.innerText.replace(/#|\s\/\s120/g, ''));
+    initialTeamRank = parseInt(teamBadge.innerText.replace(/#|\s\/\s24/g, ''));
+    addLog('[System] Ready. Condition: ' + CONDITION.toUpperCase());
+    console.log(`📊 Condition loaded: ${CONDITION}`);
+};
+window.getFinalData = function () { return finalAllocation; };
+window.getCondition = function () { return CONDITION; };
+</script>
+</body>
+</html>
