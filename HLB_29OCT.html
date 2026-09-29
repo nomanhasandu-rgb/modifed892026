@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FMCG Effort Trade-Off Simulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #d9ece0;
+    min-height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+    padding: 20px;
+    user-select: none;
+}
+.app {
+    max-width: 1500px; width: 100%;
+    background: #ffffff; border-radius: 32px;
+    box-shadow: 0 24px 60px rgba(20, 90, 42, 0.15);
+    overflow: hidden;
+}
+header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 26px;
+    border-bottom: 1px solid rgba(30, 126, 52, 0.12);
+    flex-wrap: wrap; gap: 12px;
+}
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(30, 126, 52, 0.22);
+}
+.logo h1 { font-size: 17px; font-weight: 800; color: #145a2a; }
+.badge-live {
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    color: white;
+    font-size: 11px; font-weight: 700;
+    padding: 5px 12px; border-radius: 20px;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.65} }
+.task-tabs {
+    display: flex; gap: 6px;
+    background: #f4fbf6;
+    padding: 8px;
+    margin: 14px 26px 0;
+    border-radius: 14px;
+    border: 1px solid rgba(30, 126, 52, 0.1);
+}
+.task-tab {
+    flex: 1; padding: 12px 16px;
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 10px;
+    font-size: 13px; font-weight: 700;
+    color: #5a8a6a; cursor: pointer;
+    transition: all 0.2s ease; font-family: inherit;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+}
+.task-tab .task-tab-icon {
+    font-size: 16px; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(30, 126, 52, 0.12);
+    color: #1e7e34; font-weight: 900;
+}
+.task-tab .task-tab-label { font-size: 13px; font-weight: 800; }
+.task-tab .task-tab-status {
+    font-size: 9.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.4px; opacity: 0.75;
+}
+.task-tab:hover:not(.locked):not(:disabled) { background: rgba(30, 126, 52, 0.06); }
+.task-tab.active {
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(30, 126, 52, 0.25);
+}
+.task-tab.active .task-tab-icon { background: rgba(255,255,255,0.22); color: #ffffff; }
+.task-tab.completed {
+    background: rgba(122, 232, 154, 0.12);
+    border-color: rgba(30, 126, 52, 0.35);
+    color: #145a2a;
+}
+.task-tab.completed .task-tab-icon { background: #1e7e34; color: #ffffff; }
+.task-tab.locked {
+    background: rgba(26, 43, 76, 0.05);
+    color: #8a9aa8; cursor: not-allowed; opacity: 0.7;
+}
+.task-tab.locked .task-tab-icon { background: rgba(26, 43, 76, 0.12); color: #6f8aa8; }
+.task-tab.newly-unlocked { animation: unlockPulse 1.2s ease 3; }
+@keyframes unlockPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(122, 232, 154, 0.6); }
+    50% { box-shadow: 0 0 0 8px rgba(122, 232, 154, 0); }
+}
+main {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr 0.9fr;
+    gap: 18px;
+    padding: 20px 26px 22px;
+    min-height: 600px;
+}
+@media (max-width: 1200px) { main { grid-template-columns: 1fr; } }
+.performance, .leaderboards, .control {
+    background: linear-gradient(165deg, #0a3d33 0%, #155a4a 100%);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 18px;
+    border: 1px solid rgba(122, 232, 210, 0.15);
+    box-shadow: 0 8px 24px rgba(10, 61, 51, 0.28);
+    display: flex; flex-direction: column;
+}
+.performance { gap: 10px; }
+.leaderboards { gap: 12px; }
+.control { gap: 12px; }
+.panel-title {
+    font-size: 11px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: #ffffff; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+}
+.panel-title::after {
+    content: ''; flex: 1; height: 1.5px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.28), transparent);
+}
+.header-icon, .label-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.28);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    color: #ffffff; font-size: 13px; flex-shrink: 0; line-height: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+.header-icon.team-icon, .label-icon.team-icon { width: 28px; height: 28px; font-size: 15px; }
+.rank-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 14px; padding: 12px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    margin-bottom: 10px;
+}
+.rank-card.individual { border-left: 4px solid #7ae89a; }
+.rank-card.team { border-left: 4px solid #e8c86a; }
+.rank-header {
+    font-size: 10.5px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: #ffffff; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+}
+.rank-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.rank-value { font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; line-height: 1; }
+.rank-prefix { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.85); margin-right: 1px; }
+.rank-of { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); }
+.rank-movement {
+    font-size: 11px; font-weight: 800;
+    padding: 2px 8px; border-radius: 10px;
+    margin-left: auto; font-family: 'SF Mono', 'Courier New', monospace;
+}
+.rank-movement.up { background: rgba(122, 232, 154, 0.28); color: #b3ffd1; }
+.rank-movement.down { background: rgba(232, 93, 74, 0.28); color: #ffb9a5; }
+.rank-movement.flat { background: rgba(255, 255, 255, 0.18); color: #ffffff; }
+.metric-section {
+    margin-top: 4px; padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.2);
+}
+.metric-top-row {
+    display: flex; justify-content: space-between;
+    align-items: baseline; gap: 10px; margin-bottom: 6px;
+}
+.metric-name {
+    font-size: 11px; font-weight: 700; color: #ffffff;
+    display: flex; align-items: center; gap: 5px; min-width: 0;
+}
+.metric-name .star { color: #ffd966; font-size: 10px; flex-shrink: 0; }
+.metric-score {
+    font-size: 11.5px; font-weight: 800; color: #ffffff;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    white-space: nowrap; letter-spacing: -0.01em; flex-shrink: 0;
+}
+.metric-bar {
+    width: 100%; height: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px; overflow: hidden;
+}
+.metric-bar-fill { height: 100%; border-radius: 10px; transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.fill-individual { background: linear-gradient(90deg, #7ae89a, #34a853); }
+.fill-team { background: linear-gradient(90deg, #e8c86a, #c99a2b); }
+
+.lb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lb-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px; padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.lb-card h4 {
+    font-size: 10.5px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: #ffffff; margin-bottom: 6px; padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.lb-header-row {
+    display: flex; align-items: center;
+    padding: 2px 4px 5px 4px;
+    font-size: 9.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.7);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    margin-bottom: 3px;
+}
+.lb-row {
+    display: flex; align-items: center;
+    padding: 4px 4px; border-radius: 6px;
+    font-size: 11px; gap: 4px;
+}
+.lb-row:hover { background: rgba(255, 255, 255, 0.08); }
+.lb-row.user { background: rgba(255, 217, 102, 0.28); border-left: 3px solid #ffd966; border-radius: 6px 0 0 6px; }
+.lb-divider {
+    height: 1px;
+    background: repeating-linear-gradient(90deg,
+        rgba(255,255,255,0.25) 0, rgba(255,255,255,0.25) 4px,
+        transparent 4px, transparent 8px);
+    margin: 4px 4px;
+}
+.lb-rank { font-weight: 700; color: rgba(255,255,255,0.85); min-width: 22px; font-size: 10px; }
+.lb-avatar {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: #ffffff; flex-shrink: 0;
+}
+.lb-avatar.user-avatar { background: linear-gradient(135deg, #ffd966, #f7c948); color: #0a1a2e; }
+.lb-name { flex: 1; color: #ffffff; font-size: 10.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-score { font-weight: 700; color: #ffffff; font-size: 10.5px; min-width: 24px; text-align: right; font-family: 'SF Mono', 'Courier New', monospace; }
+.lb-movement {
+    font-size: 8.5px; font-weight: 700;
+    padding: 1px 5px; border-radius: 8px;
+    min-width: 30px; text-align: center;
+    font-family: 'SF Mono', 'Courier New', monospace;
+}
+.lb-movement.up { background: rgba(122, 232, 154, 0.25); color: #b3ffd1; }
+.lb-movement.down { background: rgba(232, 93, 74, 0.25); color: #ffb9a5; }
+.lb-movement.flat { color: rgba(255,255,255,0.7); font-weight: 500; }
+.lb-footnote {
+    margin-top: auto; padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 10.5px; color: rgba(255, 255, 255, 0.92); line-height: 1.75;
+}
+.lb-footnote .heading { font-weight: 800; color: #ffffff; margin-bottom: 4px; font-size: 11.5px; }
+.lb-footnote .arrow-up { color: #b3ffd1; font-weight: 700; }
+.lb-footnote .arrow-down { color: #ffb9a5; font-weight: 700; }
+
+.alloc-counter { border-radius: 12px; padding: 12px 14px; transition: all 0.35s ease; }
+.alloc-counter.incomplete { background: rgba(232, 93, 74, 0.22); border: 1.5px solid rgba(232, 93, 74, 0.55); }
+.alloc-counter.complete { background: rgba(122, 232, 154, 0.18); border: 1.5px solid rgba(122, 232, 154, 0.55); }
+.alloc-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: #ffffff; margin-bottom: 3px; }
+.alloc-value { font-size: 24px; font-weight: 900; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; transition: color 0.35s ease; }
+.alloc-counter.incomplete .alloc-value { color: #ffc2ad; }
+.alloc-counter.complete .alloc-value { color: #b3ffd1; }
+.alloc-value .alloc-unit { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.9); }
+
+.slider-group { background: rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 13px 12px; border: 1px solid rgba(255,255,255,0.12); }
+.slider-group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.slider-group-label { font-size: 12.5px; font-weight: 700; color: #ffffff; display: inline-flex; align-items: center; gap: 8px; }
+.slider-row { display: flex; align-items: center; gap: 10px; position: relative; padding-top: 30px; }
+.slider-end-label { font-size: 10.5px; font-weight: 700; color: #ffffff; font-family: 'SF Mono', 'Courier New', monospace; white-space: nowrap; min-width: 44px; }
+.slider-end-label.left { text-align: left; }
+.slider-end-label.right { text-align: right; }
+.slider-track-wrap { position: relative; flex: 1; height: 24px; cursor: pointer; touch-action: none; }
+.slider-track-bg {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    left: 0; right: 0; height: 8px;
+    background: rgba(255, 255, 255, 0.2); border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.slider-track-fill {
+    height: 100%; background: linear-gradient(90deg, #7ae89a, #34a853);
+    border-radius: 10px; transition: width 0.12s linear;
+    box-shadow: 0 0 8px rgba(122, 232, 154, 0.45);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SLIDER THUMB — now with a "live" pulsing glow
+   ═══════════════════════════════════════════════════════ */
+.slider-thumb {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    background: #ffffff;
+    border: 3px solid #1e7e34;
+    border-radius: 50%;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4),
+                0 0 0 4px rgba(122, 232, 154, 0.2);
+    transform: translate(-50%, -50%);
+    transition: left 0.12s linear;
+    z-index: 2;
+    pointer-events: none;
+    /* Pulsing glow animation */
+    animation: thumbGlow 2s ease-in-out infinite;
+}
+
+/* Expanding ripple ring behind the thumb */
+.slider-thumb::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(122, 232, 154, 0.6);
+    transform: translate(-50%, -50%);
+    z-index: -1;
+    animation: thumbRipple 2s ease-out infinite;
+    pointer-events: none;
+}
+
+/* Soft glow color pulse */
+@keyframes thumbGlow {
+    0%, 100% {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4),
+                    0 0 0 4px rgba(122, 232, 154, 0.25),
+                    0 0 12px 2px rgba(122, 232, 154, 0.55);
+    }
+    50% {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4),
+                    0 0 0 6px rgba(122, 232, 154, 0.35),
+                    0 0 22px 4px rgba(122, 232, 154, 0.85);
+    }
+}
+
+/* Expanding ripple ring */
+@keyframes thumbRipple {
+    0% {
+        width: 24px;
+        height: 24px;
+        opacity: 0.75;
+    }
+    100% {
+        width: 52px;
+        height: 52px;
+        opacity: 0;
+    }
+}
+
+/* While actively dragging — pin the glow bright, stop animation */
+.slider-track-wrap.dragging .slider-thumb {
+    animation: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4),
+                0 0 0 6px rgba(122, 232, 154, 0.4),
+                0 0 22px 5px rgba(122, 232, 154, 0.9);
+}
+.slider-track-wrap.dragging .slider-thumb::before {
+    animation: none;
+    opacity: 0;
+}
+
+.slider-badge {
+    position: absolute; bottom: calc(100% + 4px); left: 0;
+    transform: translateX(-50%);
+    background: #ffffff; color: #0a3d1f;
+    font-size: 11px; font-weight: 900; padding: 3px 10px; border-radius: 8px;
+    white-space: nowrap; font-family: 'SF Mono', 'Courier New', monospace;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+    border: 2px solid #7ae89a; letter-spacing: 0.2px;
+    transition: left 0.12s linear; z-index: 3;
+}
+.slider-track-wrap.dragging .slider-track-fill,
+.slider-track-wrap.dragging .slider-badge { transition: none; }
+
+/* ═══════════════════════════════════════════════════════
+   LIVE EFFECT BOX — card layout with contained chip
+   ═══════════════════════════════════════════════════════ */
+.explanation {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px dashed rgba(255, 217, 102, 0.6);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.explanation .exp-title {
+    font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: #ffd966;
+    display: flex; align-items: center; gap: 5px;
+}
+
+.effect-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 12px 14px;
+    overflow: hidden;
+}
+.effect-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.effect-card-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1;
+}
+.effect-days-badge {
+    background: #7ae89a;
+    color: #0a3d1f;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    font-size: 10.5px;
+    font-weight: 900;
+    padding: 3px 11px;
+    border-radius: 20px;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+}
+.effect-rank-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.effect-rank-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    flex-shrink: 0;
+    margin-right: auto;
+}
+.effect-rank-label .er-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.28);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    flex-shrink: 0;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+.effect-rank-label .er-icon.team-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+}
+.rank-flow {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    flex-shrink: 0;
+}
+.rank-flow .rank-from {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 700;
+    font-size: 11.5px;
+}
+.rank-flow .flow-arrow {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+}
+.rank-flow .rank-to {
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: -0.02em;
+}
+.delta-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    font-size: 10px;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 8px;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.delta-chip.up {
+    background: rgba(122, 232, 154, 0.32);
+    color: #d4ffe4;
+    border: 1px solid rgba(122, 232, 154, 0.55);
+}
+.delta-chip.down {
+    background: rgba(232, 93, 74, 0.32);
+    color: #ffd0c2;
+    border: 1px solid rgba(232, 93, 74, 0.55);
+}
+.delta-chip.flat {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.effect-tip {
+    margin-top: 4px;
+    padding: 9px 12px;
+    background: rgba(255, 217, 102, 0.15);
+    border-left: 3px solid #ffd966;
+    border-radius: 8px;
+    font-size: 10.5px;
+    color: #fff5d6;
+    font-style: italic;
+    line-height: 1.5;
+}
+.effect-tip .tip-icon {
+    font-style: normal;
+    font-weight: 700;
+    margin-right: 4px;
+}
+
+.lock-btn {
+    background: #7ae89a; color: #0a3d1f;
+    border: none; border-radius: 30px;
+    padding: 13px 18px; font-size: 14px; font-weight: 800;
+    cursor: pointer; box-shadow: 0 6px 20px rgba(122, 232, 154, 0.4);
+    transition: all 0.2s ease; font-family: inherit; margin-top: auto;
+}
+.lock-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(122, 232, 154, 0.55); }
+.lock-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.lock-btn.continue { background: #ffd966; color: #0a3d1f; box-shadow: 0 6px 20px rgba(255, 217, 102, 0.4); }
+.lock-btn.continue:hover { box-shadow: 0 10px 28px rgba(255, 217, 102, 0.55); }
+
+.survey-continue-btn {
+    display: none;
+    background: linear-gradient(135deg, #ffd966, #f5c542);
+    color: #0a3d1f;
+    border: none; border-radius: 30px;
+    padding: 15px 22px; font-size: 15px; font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(255, 217, 102, 0.55);
+    transition: all 0.25s ease; font-family: inherit;
+    margin-top: 12px; letter-spacing: 0.3px;
+    animation: surveyPulse 2s ease-in-out infinite;
+}
+.survey-continue-btn.show { display: block; }
+.survey-continue-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(255, 217, 102, 0.7); }
+.survey-continue-btn:active { transform: translateY(-1px); }
+@keyframes surveyPulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(255, 217, 102, 0.55); }
+    50% { box-shadow: 0 8px 32px rgba(255, 217, 102, 0.85); }
+}
+
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10, 30, 18, 0.55); backdrop-filter: blur(6px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000; opacity: 0; visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.modal-overlay.show { opacity: 1; visibility: visible; }
+.modal-card {
+    background: #ffffff; border-radius: 22px;
+    padding: 28px 32px; max-width: 460px; width: 90%;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+    border: 2px solid #1e7e34;
+    transform: translateY(10px) scale(0.97);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.modal-overlay.show .modal-card { transform: translateY(0) scale(1); }
+.modal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.modal-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(30, 126, 52, 0.25);
+}
+.modal-card h3 { font-size: 18px; font-weight: 800; color: #145a2a; }
+.modal-body { font-size: 13px; color: #3d5775; line-height: 1.6; margin-bottom: 18px; }
+.modal-summary {
+    background: linear-gradient(145deg, #f4fbf6, #e8f4ec);
+    border-radius: 12px; padding: 12px 16px; margin: 12px 0;
+    border: 1px solid rgba(30, 126, 52, 0.15); font-size: 12.5px;
+}
+.modal-summary .row { display: flex; justify-content: space-between; padding: 3px 0; }
+.modal-summary .row strong { color: #145a2a; }
+.modal-warning {
+    padding: 10px 14px; background: rgba(232, 93, 74, 0.1);
+    border: 1px solid rgba(232, 93, 74, 0.35); border-radius: 10px;
+    font-size: 12.5px; color: #7a2e1f; margin-top: 10px; line-height: 1.5;
+}
+.modal-warning strong { color: #4a1a10; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+.modal-btn {
+    padding: 11px 22px; border-radius: 30px;
+    font-weight: 700; font-size: 13px;
+    border: none; cursor: pointer;
+    transition: all 0.2s ease; font-family: inherit;
+}
+.modal-btn-cancel { background: #f0f4fa; color: #3d5775; border: 1.5px solid #cddae9; }
+.modal-btn-cancel:hover { background: #e2eaf5; }
+.modal-btn-confirm {
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    color: white; box-shadow: 0 4px 16px rgba(30, 126, 52, 0.3);
+}
+.modal-btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(30, 126, 52, 0.4); }
+.modal-btn-confirm.warning {
+    background: linear-gradient(135deg, #e85d4a, #c44536);
+    color: #ffffff; box-shadow: 0 4px 16px rgba(196, 69, 54, 0.35);
+}
+.modal-btn-confirm.warning:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(196, 69, 54, 0.5); }
+
+footer {
+    padding: 12px 26px; background: #f8fbf9;
+    border-top: 1px solid rgba(30, 126, 52, 0.08);
+    font-size: 10.5px; color: #6f8aa8;
+    display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 8px;
+}
+footer .dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: #34a853; margin-right: 6px;
+    animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+</head>
+<body>
+
+<div class="app">
+    <header>
+        <div class="logo">
+            <div class="logo-icon">📊</div>
+            <h1>FMCG Effort Trade-Off Simulator</h1>
+        </div>
+        <div class="header-right">
+            <span class="badge-live">● LIVE</span>
+        </div>
+    </header>
+
+    <div class="task-tabs" id="taskTabs" role="tablist"></div>
+
+    <main>
+        <section class="performance">
+            <div class="panel-title">📈 Your Performance</div>
+
+            <div class="rank-card individual">
+                <div class="rank-header">
+                    <span class="header-icon">👤</span>
+                    Individual Rank
+                </div>
+                <div class="rank-row">
+                    <span class="rank-prefix">#</span>
+                    <span class="rank-value" id="indRankVal">12</span>
+                    <span class="rank-of">/ 120</span>
+                    <span class="rank-movement flat" id="indMovement">–</span>
+                </div>
+                <div class="metric-section">
+                    <div class="metric-top-row">
+                        <span class="metric-name">
+                            <span class="star">★</span>
+                            <span id="indMetricLabel">Personal Sales Quota</span>
+                        </span>
+                        <span class="metric-score" id="indMetricScore">—</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill fill-individual" id="indMetricFill" style="width:50%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rank-card team">
+                <div class="rank-header">
+                    <span class="header-icon team-icon">👥</span>
+                    Team Rank
+                </div>
+                <div class="rank-row">
+                    <span class="rank-prefix">#</span>
+                    <span class="rank-value" id="teamRankVal">15</span>
+                    <span class="rank-of">/ 24</span>
+                    <span class="rank-movement flat" id="teamMovement">–</span>
+                </div>
+                <div class="metric-section">
+                    <div class="metric-top-row">
+                        <span class="metric-name">
+                            <span class="star">★</span>
+                            <span id="teamMetricLabel">Helping a Team Member</span>
+                        </span>
+                        <span class="metric-score" id="teamMetricScore">—</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill fill-team" id="teamMetricFill" style="width:50%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="leaderboards">
+            <div class="panel-title">🏆 Live Leaderboard Projection</div>
+            <div class="lb-grid">
+                <div class="lb-card">
+                    <h4>👤 Individual (120)</h4>
+                    <div id="indLeaderboard"></div>
+                </div>
+                <div class="lb-card">
+                    <h4>👥 Team (24)</h4>
+                    <div id="teamLeaderboard"></div>
+                </div>
+            </div>
+            <div class="lb-footnote">
+                <div class="heading">📖 How to read the leaderboards:</div>
+                <div>📌 The leaderboard positions are projected. They may vary based on other participants' efforts.</div>
+                <div><span class="arrow-up">▲</span> = Rank improved · <span class="arrow-down">▼</span> = Rank declined (compared to your starting position)</div>
+                <div>🏅 Only the top 10 individuals and teams are shown.</div>
+            </div>
+        </section>
+
+        <section class="control">
+            <div class="panel-title">🕹️ Effort Allocation</div>
+
+            <div class="alloc-counter incomplete" id="allocCounter">
+                <div class="alloc-label">Allocated</div>
+                <div class="alloc-value">
+                    <span id="totalUsed">6</span> / 10
+                    <span class="alloc-unit">Days</span>
+                </div>
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-group-header">
+                    <span class="slider-group-label" id="indSliderLabel">
+                        <span class="label-icon">💰</span>
+                        Personal Sales Quota
+                    </span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-end-label left">0 days</span>
+                    <div class="slider-track-wrap" id="indSliderTrack">
+                        <div class="slider-badge" id="indBadge">4 days</div>
+                        <div class="slider-track-bg">
+                            <div class="slider-track-fill" id="indTrackFill"></div>
+                            <div class="slider-thumb" id="indThumb"></div>
+                        </div>
+                    </div>
+                    <span class="slider-end-label right">10 days</span>
+                </div>
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-group-header">
+                    <span class="slider-group-label" id="teamSliderLabel">
+                        <span class="label-icon">🤝</span>
+                        Helping a Team Member
+                    </span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-end-label left">0 days</span>
+                    <div class="slider-track-wrap" id="teamSliderTrack">
+                        <div class="slider-badge" id="teamBadge">2 days</div>
+                        <div class="slider-track-bg">
+                            <div class="slider-track-fill" id="teamTrackFill"></div>
+                            <div class="slider-thumb" id="teamThumb"></div>
+                        </div>
+                    </div>
+                    <span class="slider-end-label right">10 days</span>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <div class="exp-title">📌 Live Effect of Your Allocation</div>
+                <div id="expContent"></div>
+            </div>
+
+            <button class="lock-btn" id="lockBtn" onclick="onLockButtonClick()">
+                🔒 Lock Decision &amp; Continue
+            </button>
+
+            <button class="survey-continue-btn" id="surveyContinueBtn" onclick="goToSurvey()">
+                ✅ Continue to Survey →
+            </button>
+        </section>
+    </main>
+
+    <footer>
+        <span><span class="dot"></span> Real-time simulation · Drag sliders to allocate · Total = 10 days</span>
+        <span>📊 All interactions logged are highly confidential.</span>
+    </footer>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-icon">🔒</div>
+            <h3>Confirm Your Allocation</h3>
+        </div>
+        <div class="modal-body">
+            <div>You are about to lock in your effort allocation for this task.</div>
+            <div class="modal-summary" id="modalSummary"></div>
+            <div class="modal-warning" id="modalWarning" style="display:none;"></div>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn modal-btn-cancel" onclick="cancelLock()">← Revise Allocation</button>
+            <button class="modal-btn modal-btn-confirm" id="confirmBtn" onclick="confirmLock()">OK, Lock It In ✓</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG
+   ═══════════════════════════════════════════════════════════════ */
+const SURVEY_URL = 'https://cityu.qualtrics.com/jfe/form/SV_dipEKIFu3tNQ0JM';
+
+const TASKS = [
+    { id: 'task1', label: 'Task 1', condition: 'conflict' },
+    { id: 'task2', label: 'Task 2', condition: 'independence' },
+    { id: 'task3', label: 'Task 3', condition: 'synergy' }
+];
+
+const METRIC_META = {
+    'Personal Sales Quota':          { target: 1000, format: (v, t) => `$${Math.round(v)}K / $${t}K` },
+    'Helping a Team Member':         { target: 20,   format: (v, t) => `${Math.round(v)} / ${t} assisted` },
+    'Team Process Compliance':       { target: 100,  format: (v, t) => `${Math.round(v)} of ${t} points` },
+    'Customer Relationship Quality': { target: 100,  format: (v, t) => `${Math.round(v)} / ${t} index` }
+};
+
+const CONFIG = {
+    conflict: {
+        indMetric: 'Personal Sales Quota',
+        teamMetric: 'Helping a Team Member',
+        indScore: (r, c) => 40 + (r * 4.0) - (c * 2.0),
+        teamScore: (r, c) => 40 + (c * 4.0) - (r * 2.0),
+        note: 'Every day on one goal takes time from the other.'
+    },
+    independence: {
+        indMetric: 'Personal Sales Quota',
+        teamMetric: 'Team Process Compliance',
+        indScore: (r, c) => 25 + (r * 5.0),
+        teamScore: (r, c) => 25 + (c * 5.0),
+        note: 'Each slider affects only its own rank — no cross-effects.'
+    },
+    synergy: {
+        indMetric: 'Personal Sales Quota',
+        teamMetric: 'Customer Relationship Quality',
+        indScore: (r, c) => 20 + (r * 4.0) + (c * 2.0),
+        teamScore: (r, c) => 20 + (c * 4.0) + (r * 2.0),
+        note: 'Every day invested lifts BOTH scores.'
+    }
+};
+
+let taskStates = {
+    task1: { indDays: 4, teamDays: 2, locked: false, initialIndRank: null, initialTeamRank: null, startRanksInd: null, startRanksTeam: null, logs: [], startTime: null, finalData: null },
+    task2: { indDays: 4, teamDays: 2, locked: false, initialIndRank: null, initialTeamRank: null, startRanksInd: null, startRanksTeam: null, logs: [], startTime: null, finalData: null },
+    task3: { indDays: 4, teamDays: 2, locked: false, initialIndRank: null, initialTeamRank: null, startRanksInd: null, startRanksTeam: null, logs: [], startTime: null, finalData: null }
+};
+let currentTaskId = 'task1';
+let maxAccessibleIndex = 0;
+let newUnlockedTaskId = null;
+
+const $ = id => document.getElementById(id);
+
+const IND_NAMES = [
+    { name: "Alex", emoji: "👨" }, { name: "Chan", emoji: "👩" }, { name: "Li", emoji: "🧑" },
+    { name: "Lee", emoji: "👩" },  { name: "Sam", emoji: "👨" }, { name: "Kim", emoji: "👩" },
+    { name: "Raj", emoji: "🧑" },  { name: "Mia", emoji: "👩" }, { name: "Eli", emoji: "👨" },
+    { name: "Ari", emoji: "👩" },  { name: "Kai", emoji: "🧑" }
+];
+const TEAM_NAMES = [
+    { name: "Alfa", emoji: "🏢" }, { name: "Beta", emoji: "🏢" }, { name: "Gamma", emoji: "🏢" },
+    { name: "Delta", emoji: "🏢" }, { name: "Epsilon", emoji: "🏢" }, { name: "Zeta", emoji: "🏢" },
+    { name: "Eta", emoji: "🏢" }, { name: "Theta", emoji: "🏢" }, { name: "Iota", emoji: "🏢" },
+    { name: "Kappa", emoji: "🏢" }, { name: "Lambda", emoji: "🏢" }
+];
+let mockInd = [], mockTeam = [];
+function generateMocks() {
+    mockInd = []; mockTeam = [];
+    for (let i = 0; i < IND_NAMES.length; i++) mockInd.push({ ...IND_NAMES[i], score: 30 + Math.random() * 60 });
+    for (let i = 0; i < TEAM_NAMES.length; i++) mockTeam.push({ ...TEAM_NAMES[i], score: 30 + Math.random() * 60 });
+}
+generateMocks();
+
+function computeRanks(indD, teamD, condition) {
+    const cfg = CONFIG[condition];
+    const indScore = Math.max(10, Math.min(100, cfg.indScore(indD, teamD)));
+    const teamScore = Math.max(10, Math.min(100, cfg.teamScore(indD, teamD)));
+
+    const indList = mockInd.map(m => ({ ...m }));
+    indList.push({ name: 'You', emoji: '👤', score: indScore, isUser: true });
+    indList.sort((a, b) => b.score - a.score);
+    const indRank = indList.findIndex(x => x.isUser) + 1;
+
+    const teamList = mockTeam.map(m => ({ ...m }));
+    teamList.push({ name: 'You', emoji: '👤', score: teamScore, isUser: true });
+    teamList.sort((a, b) => b.score - a.score);
+    const teamRank = teamList.findIndex(x => x.isUser) + 1;
+
+    return { indScore, teamScore, indRank, teamRank, indList, teamList };
+}
+
+function renderTaskTabs() {
+    const container = $('taskTabs');
+    container.innerHTML = '';
+    TASKS.forEach((task, idx) => {
+        const state = taskStates[task.id];
+        const btn = document.createElement('button');
+        let statusClass, statusLabel, iconContent;
+        if (state.locked) { statusClass = 'completed'; statusLabel = 'Completed'; iconContent = '✓'; }
+        else if (idx === TASKS.findIndex(t => t.id === currentTaskId)) { statusClass = 'active'; statusLabel = 'In progress'; iconContent = String(idx + 1); }
+        else if (idx <= maxAccessibleIndex) { statusClass = 'available'; statusLabel = 'Ready'; iconContent = String(idx + 1); }
+        else { statusClass = 'locked'; statusLabel = 'Locked'; iconContent = '🔒'; }
+
+        btn.className = 'task-tab ' + statusClass;
+        if (task.id === newUnlockedTaskId) btn.classList.add('newly-unlocked');
+        if (idx > maxAccessibleIndex) btn.disabled = true;
+        btn.dataset.task = task.id;
+        btn.innerHTML = `
+            <span class="task-tab-icon">${iconContent}</span>
+            <span class="task-tab-label">${task.label}</span>
+            <span class="task-tab-status">${statusLabel}</span>
+        `;
+        btn.addEventListener('click', () => switchTask(task.id));
+        container.appendChild(btn);
+    });
+    newUnlockedTaskId = null;
+}
+
+function switchTask(taskId) {
+    const idx = TASKS.findIndex(t => t.id === taskId);
+    if (idx > maxAccessibleIndex) return;
+    currentTaskId = taskId;
+    const task = TASKS.find(t => t.id === taskId);
+    const state = taskStates[taskId];
+    if (state.initialIndRank === null) {
+        state.startTime = Date.now();
+        state.indDays = 4; state.teamDays = 2;
+        const r0 = computeRanks(4, 2, task.condition);
+        state.initialIndRank = r0.indRank;
+        state.initialTeamRank = r0.teamRank;
+        state.startRanksInd = {};
+        state.startRanksTeam = {};
+        r0.indList.forEach((item, i) => { if (!item.isUser) state.startRanksInd[item.name] = i + 1; });
+        r0.teamList.forEach((item, i) => { if (!item.isUser) state.startRanksTeam[item.name] = i + 1; });
+    }
+    applyTaskLabels(task.condition);
+    renderTaskTabs();
+    update();
+    updateLockButton();
+}
+
+function applyTaskLabels(condition) {
+    const cfg = CONFIG[condition];
+    $('indMetricLabel').innerText = cfg.indMetric;
+    $('teamMetricLabel').innerText = cfg.teamMetric;
+    $('indSliderLabel').innerHTML = '<span class="label-icon">💰</span>' + cfg.indMetric;
+    $('teamSliderLabel').innerHTML = '<span class="label-icon">🤝</span>' + cfg.teamMetric;
+}
+
+function attachSliderHandlers(trackId, metric) {
+    const track = $(trackId);
+    let dragging = false;
+    const computeValue = (clientX) => {
+        const rect = track.getBoundingClientRect();
+        const ratio = (clientX - rect.left) / rect.width;
+        const raw = ratio * 10;
+        return Math.max(0, Math.min(10, Math.round(raw)));
+    };
+    const applyValue = (newValue) => {
+        const state = taskStates[currentTaskId];
+        if (state.locked) return;
+        if (metric === 'ind') {
+            const capped = Math.max(0, Math.min(10, newValue));
+            if (capped + state.teamDays > 10) state.teamDays = 10 - capped;
+            state.indDays = capped;
+        } else {
+            const capped = Math.max(0, Math.min(10, newValue));
+            if (capped + state.indDays > 10) state.indDays = 10 - capped;
+            state.teamDays = capped;
+        }
+        update();
+    };
+    track.addEventListener('pointerdown', e => {
+        if (taskStates[currentTaskId].locked) return;
+        dragging = true;
+        track.classList.add('dragging');
+        try { track.setPointerCapture(e.pointerId); } catch(_) {}
+        applyValue(computeValue(e.clientX));
+    });
+    track.addEventListener('pointermove', e => { if (!dragging) return; applyValue(computeValue(e.clientX)); });
+    const endDrag = e => {
+        if (!dragging) return;
+        dragging = false;
+        track.classList.remove('dragging');
+        try { track.releasePointerCapture(e.pointerId); } catch(_) {}
+    };
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
+    track.addEventListener('pointerleave', e => { if (dragging) endDrag(e); });
+}
+
+function refreshSliderVisuals() {
+    const state = taskStates[currentTaskId];
+    const indPercent = (state.indDays / 10) * 100;
+    $('indTrackFill').style.width = indPercent + '%';
+    $('indThumb').style.left = indPercent + '%';
+    $('indBadge').style.left = indPercent + '%';
+    $('indBadge').innerText = state.indDays + (state.indDays === 1 ? ' day' : ' days');
+    const teamPercent = (state.teamDays / 10) * 100;
+    $('teamTrackFill').style.width = teamPercent + '%';
+    $('teamThumb').style.left = teamPercent + '%';
+    $('teamBadge').style.left = teamPercent + '%';
+    $('teamBadge').innerText = state.teamDays + (state.teamDays === 1 ? ' day' : ' days');
+}
+
+function update() {
+    const task = TASKS.find(t => t.id === currentTaskId);
+    const state = taskStates[currentTaskId];
+    if (state.locked) return;
+    refreshSliderVisuals();
+    const total = state.indDays + state.teamDays;
+    $('totalUsed').innerText = total;
+    const allocCounter = $('allocCounter');
+    if (total >= 10) { allocCounter.classList.remove('incomplete'); allocCounter.classList.add('complete'); }
+    else { allocCounter.classList.remove('complete'); allocCounter.classList.add('incomplete'); }
+
+    const r = computeRanks(state.indDays, state.teamDays, task.condition);
+    const cfg = CONFIG[task.condition];
+    const indMeta = METRIC_META[cfg.indMetric];
+    const teamMeta = METRIC_META[cfg.teamMetric];
+    const indValue = (r.indScore / 100) * indMeta.target;
+    const teamValue = (r.teamScore / 100) * teamMeta.target;
+
+    $('indRankVal').innerText = r.indRank;
+    $('teamRankVal').innerText = r.teamRank;
+    updateMovement('indMovement', state.initialIndRank - r.indRank);
+    updateMovement('teamMovement', state.initialTeamRank - r.teamRank);
+    $('indMetricScore').innerText = indMeta.format(indValue, indMeta.target);
+    $('indMetricFill').style.width = r.indScore + '%';
+    $('teamMetricScore').innerText = teamMeta.format(teamValue, teamMeta.target);
+    $('teamMetricFill').style.width = r.teamScore + '%';
+
+    renderExplanation(r, cfg, state);
+    renderLeaderboard('indLeaderboard', r.indList, 'individual', state.initialIndRank - r.indRank, state.startRanksInd || {});
+    renderLeaderboard('teamLeaderboard', r.teamList, 'team', state.initialTeamRank - r.teamRank, state.startRanksTeam || {});
+
+    if (!window.lastLog || Date.now() - window.lastLog > 300) {
+        window.lastLog = Date.now();
+        const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+        state.logs.push({ t: elapsed, ind: state.indDays, team: state.teamDays, indRank: r.indRank, teamRank: r.teamRank });
+    }
+}
+
+function updateMovement(elId, diff) {
+    const el = $(elId);
+    el.classList.remove('up', 'down', 'flat');
+    if (diff > 0) { el.classList.add('up'); el.innerText = '▲ +' + diff; }
+    else if (diff < 0) { el.classList.add('down'); el.innerText = '▼ ' + diff; }
+    else { el.classList.add('flat'); el.innerText = '–'; }
+}
+
+function renderLeaderboard(containerId, sortedList, type, userDiff, startRanksMap) {
+    const container = $(containerId);
+    container.innerHTML = '';
+    const header = document.createElement('div');
+    header.className = 'lb-header-row';
+    header.innerHTML = `
+        <span class="lb-rank">Rank</span>
+        <span style="width:20px;flex-shrink:0;"></span>
+        <span class="lb-name">Name</span>
+        <span class="lb-score" style="text-align:right;">Score</span>
+        <span style="min-width:30px;"></span>`;
+    container.appendChild(header);
+
+    const userIdx = sortedList.findIndex(x => x.isUser);
+    let visibleItems = [];
+    let insertDividerAfter = -1;
+    if (userIdx < 10) { visibleItems = sortedList.slice(0, 10); }
+    else { visibleItems = sortedList.slice(0, 9); insertDividerAfter = visibleItems.length - 1; visibleItems.push(sortedList[userIdx]); }
+
+    visibleItems.forEach((item, idx) => {
+        const currentRank = sortedList.indexOf(item) + 1;
+        const row = document.createElement('div');
+        row.className = 'lb-row' + (item.isUser ? ' user' : '');
+        let movement = '';
+        if (item.isUser) {
+            if (userDiff > 0) movement = `<span class="lb-movement up">▲ +${userDiff}</span>`;
+            else if (userDiff < 0) movement = `<span class="lb-movement down">▼ ${userDiff}</span>`;
+            else movement = `<span class="lb-movement flat">–</span>`;
+        } else {
+            const startRank = startRanksMap[item.name];
+            if (startRank !== undefined) {
+                const delta = startRank - currentRank;
+                if (delta > 0) movement = `<span class="lb-movement up">▲ +${delta}</span>`;
+                else if (delta < 0) movement = `<span class="lb-movement down">▼ ${delta}</span>`;
+                else movement = `<span class="lb-movement flat">–</span>`;
+            } else { movement = `<span class="lb-movement flat">–</span>`; }
+        }
+        const avatarClass = item.isUser ? 'lb-avatar user-avatar' : 'lb-avatar';
+        const displayName = item.isUser ? 'You' : item.name;
+        row.innerHTML = `
+            <span class="lb-rank">#${currentRank}</span>
+            <span class="${avatarClass}">${item.isUser ? '👤' : item.emoji}</span>
+            <span class="lb-name">${displayName}</span>
+            <span class="lb-score">${Math.round(item.score)}</span>
+            ${movement}`;
+        container.appendChild(row);
+        if (idx === insertDividerAfter) {
+            const div = document.createElement('div');
+            div.className = 'lb-divider';
+            container.appendChild(div);
+        }
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIVE EFFECT BOX — card layout
+   ═══════════════════════════════════════════════════════════════ */
+function renderExplanation(r, cfg, state) {
+    const el = $('expContent');
+    el.innerHTML = '';
+
+    const chip = (delta) => {
+        if (delta > 0) return `<span class="delta-chip up">▲ +${delta}</span>`;
+        if (delta < 0) return `<span class="delta-chip down">▼ ${delta}</span>`;
+        return `<span class="delta-chip flat">— no change</span>`;
+    };
+
+    const indDelta = state.initialIndRank - r.indRank;
+    const teamDelta = state.initialTeamRank - r.teamRank;
+
+    const indCard = document.createElement('div');
+    indCard.className = 'effect-card';
+    indCard.innerHTML = `
+        <div class="effect-card-header">
+            <span class="effect-card-title">💰 ${cfg.indMetric}</span>
+            <span class="effect-days-badge">${state.indDays} ${state.indDays === 1 ? 'day' : 'days'}</span>
+        </div>
+        <div class="effect-rank-row">
+            <span class="effect-rank-label">
+                <span class="er-icon">👤</span>
+                Individual Rank
+            </span>
+            <span class="rank-flow">
+                <span class="rank-from">#${state.initialIndRank}</span>
+                <span class="flow-arrow">→</span>
+                <span class="rank-to">#${r.indRank}</span>
+            </span>
+            ${chip(indDelta)}
+        </div>`;
+    el.appendChild(indCard);
+
+    const teamCard = document.createElement('div');
+    teamCard.className = 'effect-card';
+    teamCard.innerHTML = `
+        <div class="effect-card-header">
+            <span class="effect-card-title">🤝 ${cfg.teamMetric}</span>
+            <span class="effect-days-badge">${state.teamDays} ${state.teamDays === 1 ? 'day' : 'days'}</span>
+        </div>
+        <div class="effect-rank-row">
+            <span class="effect-rank-label">
+                <span class="er-icon team-icon">👥</span>
+                Team Rank
+            </span>
+            <span class="rank-flow">
+                <span class="rank-from">#${state.initialTeamRank}</span>
+                <span class="flow-arrow">→</span>
+                <span class="rank-to">#${r.teamRank}</span>
+            </span>
+            ${chip(teamDelta)}
+        </div>`;
+    el.appendChild(teamCard);
+
+    const tip = document.createElement('div');
+    tip.className = 'effect-tip';
+    tip.innerHTML = `<span class="tip-icon">💡</span>${cfg.note}`;
+    el.appendChild(tip);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOCK BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+function updateLockButton() {
+    const btn = $('lockBtn');
+    const surveyBtn = $('surveyContinueBtn');
+    const state = taskStates[currentTaskId];
+    const taskIdx = TASKS.findIndex(t => t.id === currentTaskId);
+    btn.classList.remove('continue');
+    btn.disabled = false;
+    surveyBtn.classList.remove('show');
+    surveyBtn.style.display = 'none';
+
+    if (state.locked) {
+        if (taskIdx < TASKS.length - 1) {
+            btn.innerHTML = `Continue to ${TASKS[taskIdx + 1].label} →`;
+            btn.classList.add('continue');
+        } else {
+            btn.innerHTML = '✅ All Tasks Complete';
+            btn.disabled = true;
+            btn.style.display = 'none';
+            surveyBtn.classList.add('show');
+            surveyBtn.style.display = 'block';
+        }
+    } else {
+        btn.innerHTML = '🔒 Lock Decision &amp; Continue';
+        btn.style.display = 'block';
+    }
+}
+
+function onLockButtonClick() {
+    const state = taskStates[currentTaskId];
+    const taskIdx = TASKS.findIndex(t => t.id === currentTaskId);
+    if (state.locked) {
+        if (taskIdx < TASKS.length - 1) switchTask(TASKS[taskIdx + 1].id);
+        return;
+    }
+    openConfirmModal();
+}
+
+function openConfirmModal() {
+    const task = TASKS.find(t => t.id === currentTaskId);
+    const state = taskStates[currentTaskId];
+    const cfg = CONFIG[task.condition];
+    const total = state.indDays + state.teamDays;
+    const remaining = 10 - total;
+    const r = computeRanks(state.indDays, state.teamDays, task.condition);
+    $('modalSummary').innerHTML = `
+        <div class="row"><span>💰 ${cfg.indMetric}</span><strong>${state.indDays} ${state.indDays === 1 ? 'day' : 'days'}</strong></div>
+        <div class="row"><span>🤝 ${cfg.teamMetric}</span><strong>${state.teamDays} ${state.teamDays === 1 ? 'day' : 'days'}</strong></div>
+        <div class="row" style="border-top:1px dashed rgba(30,126,52,0.2); margin-top:6px; padding-top:6px;">
+            <span>👤 Projected Individual Rank</span><strong>#${r.indRank} / 120</strong>
+        </div>
+        <div class="row"><span>👥 Projected Team Rank</span><strong>#${r.teamRank} / 24</strong></div>`;
+    if (remaining > 0) {
+        $('modalWarning').style.display = 'block';
+        $('modalWarning').innerHTML = `⚠️ You still have <strong>${remaining} ${remaining === 1 ? 'day' : 'days'}</strong> unallocated. These could further improve your ranking.`;
+        $('confirmBtn').innerHTML = `Lock with ${remaining} ${remaining === 1 ? 'day' : 'days'} remaining ✓`;
+        $('confirmBtn').classList.add('warning');
+    } else {
+        $('modalWarning').style.display = 'none';
+        $('confirmBtn').innerHTML = 'OK, Lock It In ✓';
+        $('confirmBtn').classList.remove('warning');
+    }
+    $('confirmModal').classList.add('show');
+}
+
+function cancelLock() { $('confirmModal').classList.remove('show'); }
+
+function confirmLock() {
+    $('confirmModal').classList.remove('show');
+    setTimeout(() => {
+        const task = TASKS.find(t => t.id === currentTaskId);
+        const state = taskStates[currentTaskId];
+        if (state.locked) return;
+        state.locked = true;
+        const r = computeRanks(state.indDays, state.teamDays, task.condition);
+        state.finalData = {
+            taskId: currentTaskId,
+            condition: task.condition,
+            indDays: state.indDays,
+            teamDays: state.teamDays,
+            totalAllocated: state.indDays + state.teamDays,
+            indRank: r.indRank,
+            teamRank: r.teamRank,
+            timeTakenSec: Math.floor((Date.now() - state.startTime) / 1000),
+            sliderHistory: state.logs
+        };
+        const taskIdx = TASKS.findIndex(t => t.id === currentTaskId);
+        if (taskIdx < TASKS.length - 1) {
+            maxAccessibleIndex = Math.max(maxAccessibleIndex, taskIdx + 1);
+            newUnlockedTaskId = TASKS[taskIdx + 1].id;
+        }
+        renderTaskTabs();
+        updateLockButton();
+        console.log('📊 TASK LOCKED:', JSON.stringify(state.finalData, null, 2));
+    }, 250);
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && $('confirmModal').classList.contains('show')) cancelLock();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   SURVEY REDIRECT
+   ═══════════════════════════════════════════════════════════════ */
+function goToSurvey() {
+    const payload = window.getFinalData();
+    const btn = $('surveyContinueBtn');
+    btn.innerHTML = '✅ Opening survey…';
+    btn.disabled = true;
+    btn.style.cursor = 'default';
+    btn.style.animation = 'none';
+    btn.style.opacity = '0.9';
+
+    try {
+        window.parent.postMessage({ type: 'LEADERBOARD_COMPLETE', payload: payload }, '*');
+    } catch (err) { console.warn('postMessage failed:', err); }
+
+    try {
+        const json = JSON.stringify(payload);
+        localStorage.setItem('leaderboard_payload', json);
+        sessionStorage.setItem('leaderboard_payload', json);
+    } catch (err) { console.warn('Storage write failed:', err); }
+
+    const params = new URLSearchParams();
+    params.set('source', 'leaderboard');
+    params.set('completed', payload.allCompleted ? '1' : '0');
+    const finalUrl = SURVEY_URL + '?' + params.toString();
+
+    setTimeout(function () {
+        try {
+            if (window.top && window.top !== window) window.top.location.href = finalUrl;
+            else window.location.href = finalUrl;
+        } catch (err) { window.location.href = finalUrl; }
+    }, 700);
+}
+
+window.addEventListener('load', () => {
+    renderTaskTabs();
+    attachSliderHandlers('indSliderTrack', 'ind');
+    attachSliderHandlers('teamSliderTrack', 'team');
+    switchTask('task1');
+});
+
+window.getFinalData = () => {
+    return {
+        task1: taskStates.task1.finalData,
+        task2: taskStates.task2.finalData,
+        task3: taskStates.task3.finalData,
+        allCompleted: taskStates.task1.locked && taskStates.task2.locked && taskStates.task3.locked
+    };
+};
+window.getCurrentTask = () => currentTaskId;
+</script>
+</body>
+</html>
