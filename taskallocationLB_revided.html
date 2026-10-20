@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FMCG Field Effort Simulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#d9ece0;overflow:hidden;user-select:none}
+.app{height:100vh;display:flex;flex-direction:column;background:#fff;max-width:1560px;margin:0 auto;box-shadow:0 0 60px rgba(20,90,42,.12)}
+
+/* ---------- HEADER (fixed) ---------- */
+header{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:12px 22px;border-bottom:1px solid rgba(30,126,52,.12);flex-wrap:wrap;gap:10px;background:#fff;z-index:50}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#1e7e34,#34a853);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo h1{font-size:15px;font-weight:800;color:#145a2a}
+.badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge-condition{background:#f0f4fa;color:#145a2a;font-size:11px;font-weight:800;padding:5px 11px;border-radius:20px;border:1.5px solid rgba(30,126,52,.25);font-family:'SF Mono','Courier New',monospace}
+.badge-live{background:linear-gradient(135deg,#1e7e34,#34a853);color:#fff;font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.cond-switch{display:flex;gap:2px;background:#eef4f0;padding:3px;border-radius:14px;border:1px solid rgba(30,126,52,.15)}
+.cond-switch button{background:transparent;border:none;padding:4px 10px;border-radius:10px;font-size:10.5px;font-weight:800;color:#5a8a6a;cursor:pointer;font-family:'SF Mono','Courier New',monospace}
+.cond-switch button.on{background:#1e7e34;color:#fff}
+
+/* ---------- TABS (fixed) ---------- */
+.task-tabs{flex-shrink:0;display:flex;gap:6px;background:#f4fbf6;padding:6px;margin:10px 22px 0;border-radius:12px;border:1px solid rgba(30,126,52,.1);z-index:40}
+.task-tab{flex:1;padding:8px 12px;background:transparent;border:1.5px solid transparent;border-radius:8px;font-size:12px;font-weight:700;color:#5a8a6a;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:1px;transition:all .2s}
+.task-tab-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(30,126,52,.12);color:#1e7e34;font-weight:900;font-size:12px}
+.task-tab-label{font-size:12px;font-weight:800}
+.task-tab-status{font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;opacity:.75}
+.task-tab.active{background:linear-gradient(135deg,#1e7e34,#34a853);color:#fff}
+.task-tab.active .task-tab-icon{background:rgba(255,255,255,.25);color:#fff}
+.task-tab.completed{background:rgba(122,232,154,.14);border-color:rgba(30,126,52,.35);color:#145a2a}
+.task-tab.completed .task-tab-icon{background:#1e7e34;color:#fff}
+.task-tab.locked{background:rgba(26,43,76,.05);color:#8a9aa8;cursor:not-allowed;opacity:.7}
+
+/* ---------- INTERFACE STRIP (fixed) ---------- */
+.strip{flex-shrink:0;margin:10px 22px 0;display:grid;grid-template-columns:1.1fr 1.5fr 1.2fr;gap:8px}
+@media(max-width:1000px){.strip{grid-template-columns:1fr}}
+.strip-item{background:#0a3d33;color:#fff;border-radius:10px;padding:8px 12px;border:1px solid rgba(122,232,210,.2)}
+.strip-label{display:block;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#7ae8d2;margin-bottom:2px}
+.strip-value{font-size:11px;font-weight:600;line-height:1.4;color:#eafff7}
+.strip-value strong{color:#ffd966}
+
+/* ---------- SCROLLABLE WORK QUEUE ---------- */
+.work-wrap{flex-shrink:0;margin:10px 22px 0;background:linear-gradient(165deg,#f4fbf6,#e8f4ec);border:1.5px solid rgba(30,126,52,.22);border-radius:14px;padding:10px 14px;display:flex;flex-direction:column;max-height:34vh;min-height:180px;overflow:hidden}
+.work-head{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.work-title{font-size:12px;font-weight:800;color:#145a2a}
+.work-sub{font-size:9.5px;color:#5a8a6a;font-weight:600;margin-top:1px}
+.contract-pill{font-size:9.5px;font-weight:800;padding:4px 10px;border-radius:20px;background:#145a2a;color:#fff;font-family:'SF Mono','Courier New',monospace}
+.work-scroll{flex:1;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;padding-right:4px}
+.work-scroll::-webkit-scrollbar{width:8px}
+.work-scroll::-webkit-scrollbar-track{background:rgba(30,126,52,.06);border-radius:4px}
+.work-scroll::-webkit-scrollbar-thumb{background:rgba(30,126,52,.28);border-radius:4px}
+.work-scroll::-webkit-scrollbar-thumb:hover{background:rgba(30,126,52,.45)}
+.work-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:900px){.work-grid{grid-template-columns:1fr}}
+.work-col{background:#fff;border-radius:10px;padding:9px;border:1px solid rgba(30,126,52,.14)}
+.work-col-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid rgba(30,126,52,.12)}
+.work-col-name{font-size:11px;font-weight:800;color:#145a2a}
+.work-col-badge{font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;background:rgba(30,126,52,.12);color:#145a2a;font-family:'SF Mono','Courier New',monospace}
+.item{position:relative;border-radius:9px;padding:8px 10px;margin-bottom:6px;border:1px solid rgba(30,126,52,.13);background:#fbfefc;transition:background .3s}
+.item.locked{opacity:.55;background:#f2f5f4;border-style:dashed}
+.item.answered{border-color:#1e7e34;background:#eef9f1}
+.item-tag{display:inline-block;font-size:8px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;padding:2px 6px;border-radius:5px;margin-bottom:4px}
+.item-tag.mc{background:#e3edf7;color:#2c5a86}
+.item-tag.write{background:#fdf0d5;color:#8a5a00}
+.item-q{font-size:11px;color:#24405c;line-height:1.4;font-weight:600;margin-bottom:5px}
+.item-hint{font-size:9.5px;color:#5a7a68;line-height:1.4;margin-bottom:4px;font-style:italic}
+.item-lock{font-size:9.5px;color:#8a9aa8;font-style:italic}
+.opts{display:flex;flex-direction:column;gap:3px}
+.opt{text-align:left;font-size:10px;padding:5px 8px;border-radius:6px;border:1.5px solid #dbe6e0;background:#fff;color:#33506e;cursor:pointer;font-family:inherit;line-height:1.3}
+.opt:hover{border-color:#1e7e34;background:#f2fbf4}
+.opt.sel{border-color:#1e7e34;background:#1e7e34;color:#fff;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px}
+.chip{font-size:8.5px;font-weight:700;padding:1px 6px;border-radius:9px;background:#eef4f0;color:#4a7a5c;border:1px solid #d5e6dc}
+textarea{width:100%;min-height:60px;resize:vertical;padding:7px 9px;border-radius:7px;border:1.5px solid #dbe6e0;font-family:inherit;font-size:10.5px;line-height:1.4;color:#24405c;background:#fff}
+textarea:focus{outline:2px solid #1e7e34;border-color:#1e7e34}
+.wc{font-size:9px;color:#8a9aa8;margin-top:2px;text-align:right}
+
+/* point popup */
+.pt-pop{position:absolute;top:6px;right:8px;background:#1e7e34;color:#fff;font-size:10.5px;font-weight:900;padding:3px 9px;border-radius:12px;font-family:'SF Mono','Courier New',monospace;animation:ptPop 1.1s ease-out forwards;z-index:5;pointer-events:none}
+.pt-pop.team{background:#c99a2b}
+@keyframes ptPop{
+  0%{opacity:0;transform:translateY(4px) scale(.9)}
+  25%{opacity:1;transform:translateY(-2px) scale(1.06)}
+  60%{opacity:1;transform:translateY(-6px) scale(1)}
+  100%{opacity:0;transform:translateY(-14px) scale(.96)}
+}
+
+/* ---------- SIMULATOR (sticky) ---------- */
+main{flex:1;display:grid;grid-template-columns:.85fr 1.15fr .9fr;gap:14px;padding:12px 22px 16px;min-height:0;overflow:hidden}
+@media(max-width:1250px){main{grid-template-columns:1fr}}
+main.static-mode{grid-template-columns:1.2fr 1fr}
+.performance,.leaderboards,.control{background:linear-gradient(165deg,#0a3d33,#155a4a);color:#fff;border-radius:16px;padding:13px;border:1px solid rgba(122,232,210,.15);display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.performance::-webkit-scrollbar,.leaderboards::-webkit-scrollbar,.control::-webkit-scrollbar{width:6px}
+.performance::-webkit-scrollbar-thumb,.leaderboards::-webkit-scrollbar-thumb,.control::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
+.panel-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#fff;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.panel-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,rgba(255,255,255,.28),transparent)}
+.header-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.26);border:1.5px solid rgba(255,255,255,.5);font-size:11px}
+.rank-card{background:rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.12);margin-bottom:7px;flex-shrink:0}
+.rank-card.individual{border-left:4px solid #7ae89a}
+.rank-card.team{border-left:4px solid #e8c86a}
+.rank-header{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.rank-row{display:flex;align-items:center;gap:5px;margin-bottom:7px}
+.rank-value{font-size:19px;font-weight:800;line-height:1;transition:transform .2s ease,color .2s ease}
+.rank-value.bump{transform:scale(1.18);color:#ffd966}
+.rank-prefix{font-size:13px;font-weight:700;color:rgba(255,255,255,.85)}
+.rank-of{font-size:11px;font-weight:600;color:rgba(255,255,255,.8)}
+.rank-movement{font-size:10px;font-weight:800;padding:2px 7px;border-radius:9px;margin-left:auto;font-family:'SF Mono','Courier New',monospace}
+.rank-movement.up{background:rgba(122,232,154,.28);color:#b3ffd1}
+.rank-movement.down{background:rgba(232,93,74,.28);color:#ffb9a5}
+.rank-movement.flat{background:rgba(255,255,255,.18);color:#fff}
+.metric-section{margin-top:3px;padding-top:6px;border-top:1px dashed rgba(255,255,255,.2)}
+.metric-top-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px}
+.metric-name{font-size:10px;font-weight:700;display:flex;align-items:center;gap:4px}
+.metric-name .star{color:#ffd966;font-size:9px}
+.metric-score{font-size:11px;font-weight:800;font-family:'SF Mono','Courier New',monospace;transition:color .2s}
+.metric-score.bump{color:#ffd966}
+.metric-bar{width:100%;height:6px;background:rgba(255,255,255,.15);border-radius:10px;overflow:hidden}
+.metric-bar-fill{height:100%;border-radius:10px;transition:width .4s cubic-bezier(.34,1.56,.64,1)}
+.fill-individual{background:linear-gradient(90deg,#7ae89a,#34a853)}
+.fill-team{background:linear-gradient(90deg,#e8c86a,#c99a2b)}
+.promo-line{margin-top:6px;padding:5px 8px;border-radius:7px;background:rgba(255,217,102,.16);border:1px dashed rgba(255,217,102,.55);font-size:9.5px;color:#ffe9a8;line-height:1.4}
+.promo-line strong{color:#fff}
+.lb-card{background:rgba(255,255,255,.08);border-radius:11px;padding:8px 10px;border:1px solid rgba(255,255,255,.12);margin-bottom:7px}
+.lb-card h4{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.15);display:flex;justify-content:space-between;align-items:center}
+.lb-status{font-size:8.5px;font-weight:600;color:#b3ffd1;font-family:'SF Mono','Courier New',monospace}
+.lb-row{display:flex;align-items:center;padding:3px;border-radius:6px;font-size:10px;gap:4px;transition:background .25s}
+.lb-row.user{background:rgba(255,217,102,.28);border-left:3px solid #ffd966}
+.lb-row.promo{border-bottom:1.5px dashed rgba(255,217,102,.65)}
+.lb-row.flash{animation:rowFlash .7s ease}
+@keyframes rowFlash{0%{background:rgba(255,217,102,.5)}100%{background:rgba(255,217,102,.28)}}
+.lb-rank{font-weight:700;color:rgba(255,255,255,.85);min-width:18px;font-size:9px}
+.lb-avatar{width:17px;height:17px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+.lb-avatar.user-avatar{background:linear-gradient(135deg,#ffd966,#f7c948);color:#0a1a2e}
+.lb-name{flex:1;font-size:9.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-score{font-weight:700;font-size:9.5px;min-width:20px;text-align:right;font-family:'SF Mono','Courier New',monospace;transition:color .2s}
+.lb-score.bump{color:#ffd966}
+.lb-movement{font-size:7.5px;font-weight:700;padding:1px 4px;border-radius:7px;min-width:24px;text-align:center;font-family:'SF Mono','Courier New',monospace}
+.lb-movement.up{background:rgba(122,232,154,.25);color:#b3ffd1}
+.lb-movement.down{background:rgba(232,93,74,.25);color:#ffb9a5}
+.lb-movement.flat{color:rgba(255,255,255,.7)}
+.lb-footnote{margin-top:auto;padding:8px 10px;background:rgba(255,255,255,.08);border-radius:11px;border:1px solid rgba(255,255,255,.12);font-size:9.5px;line-height:1.55;color:rgba(255,255,255,.92)}
+.lb-footnote .heading{font-weight:800;margin-bottom:2px;font-size:10.5px}
+.ai-panel,.payoff-panel{background:rgba(255,255,255,.08);border-radius:12px;padding:12px;border:1.5px dashed rgba(255,217,102,.6)}
+.ai-panel h4,.payoff-panel h4{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#ffd966;margin-bottom:7px}
+.ai-rec{background:rgba(255,255,255,.06);border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,.12);margin-bottom:8px}
+.ai-rec-row{display:flex;justify-content:space-between;padding:2px 0;font-size:11px}
+.ai-rec-row strong{color:#b3ffd1;font-family:'SF Mono','Courier New',monospace}
+.ai-projection{font-size:10px;color:rgba(255,255,255,.75);margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,.2)}
+.ai-accept-btn{width:100%;padding:9px;border-radius:30px;background:#ffd966;color:#0a3d1f;border:none;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.ai-note{font-size:9px;color:rgba(255,255,255,.7);margin-top:6px;line-height:1.4;font-style:italic}
+.payoff-table{width:100%;border-collapse:collapse;font-size:10.5px}
+.payoff-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);line-height:1.35}
+.payoff-table td:first-child{font-weight:700;color:#ffd966;width:34%}
+.static-input-group{background:rgba(255,255,255,.08);border-radius:11px;padding:11px;border:1px solid rgba(255,255,255,.12)}
+.static-input-label{font-size:11px;font-weight:700;margin-bottom:5px;display:block}
+.static-input-row{display:flex;align-items:center;gap:8px}
+.static-input-row input[type=number]{width:76px;padding:8px;border-radius:7px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-size:13px;font-family:'SF Mono','Courier New',monospace;font-weight:700;text-align:center}
+.static-input-unit{font-size:10px;color:rgba(255,255,255,.7)}
+.alloc-counter{border-radius:11px;padding:10px 12px}
+.alloc-counter.incomplete{background:rgba(232,93,74,.22);border:1.5px solid rgba(232,93,74,.55)}
+.alloc-counter.complete{background:rgba(122,232,154,.18);border:1.5px solid rgba(122,232,154,.55)}
+.alloc-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.alloc-value{font-size:21px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+.alloc-counter.incomplete .alloc-value{color:#ffc2ad}
+.alloc-counter.complete .alloc-value{color:#b3ffd1}
+.alloc-unit{font-size:11px;font-weight:600;color:rgba(255,255,255,.9)}
+.alloc-note{font-size:9px;color:rgba(255,255,255,.78);margin-top:4px;line-height:1.4}
+.slider-group{background:rgba(255,255,255,.08);border-radius:11px;padding:10px 11px;border:1px solid rgba(255,255,255,.12)}
+.slider-group-label{font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.slider-row{display:flex;align-items:center;gap:8px;position:relative;padding-top:26px}
+.slider-end-label{font-size:9.5px;font-weight:700;font-family:'SF Mono','Courier New',monospace;min-width:36px}
+.slider-end-label.right{text-align:right}
+.slider-track-wrap{position:relative;flex:1;height:20px;cursor:pointer;touch-action:none}
+.slider-track-bg{position:absolute;top:50%;transform:translateY(-50%);left:0;right:0;height:7px;background:rgba(255,255,255,.2);border-radius:10px;border:1px solid rgba(255,255,255,.15)}
+.slider-locked-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,217,102,.6);border-radius:10px}
+.slider-track-fill{height:100%;background:linear-gradient(90deg,#7ae89a,#34a853);border-radius:10px;transition:width .1s linear}
+.slider-thumb{position:absolute;top:50%;left:0;width:20px;height:20px;background:#fff;border:3px solid #1e7e34;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,.4),0 0 0 4px rgba(122,232,154,.2);transform:translate(-50%,-50%);transition:left .1s linear;z-index:2;pointer-events:none}
+.slider-badge{position:absolute;bottom:calc(100% + 3px);left:0;transform:translateX(-50%);background:#fff;color:#0a3d1f;font-size:10px;font-weight:900;padding:2px 8px;border-radius:7px;white-space:nowrap;font-family:'SF Mono','Courier New',monospace;box-shadow:0 3px 10px rgba(0,0,0,.35);border:2px solid #7ae89a;z-index:3;transition:left .1s linear}
+.explanation{background:rgba(255,255,255,.08);border:1.5px dashed rgba(255,217,102,.6);border-radius:11px;padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+.exp-title{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#ffd966}
+.effect-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px}
+.effect-card-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.effect-card-title{font-size:10.5px;font-weight:800}
+.effect-days-badge{background:#7ae89a;color:#0a3d1f;font-family:'SF Mono','Courier New',monospace;font-size:9.5px;font-weight:900;padding:2px 8px;border-radius:20px}
+.effect-rank-row{display:flex;align-items:center;gap:7px}
+.effect-rank-label{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;margin-right:auto}
+.er-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.26);border:1.5px solid rgba(255,255,255,.5);font-size:10px}
+.rank-flow{display:inline-flex;align-items:center;gap:4px;font-family:'SF Mono','Courier New',monospace;font-size:10.5px}
+.rank-from{color:rgba(255,255,255,.7);font-weight:700}
+.flow-arrow{color:rgba(255,255,255,.5);font-size:9px}
+.rank-to{color:#fff;font-weight:900}
+.delta-chip{font-family:'SF Mono','Courier New',monospace;font-size:9px;font-weight:900;padding:2px 6px;border-radius:6px}
+.delta-chip.up{background:rgba(122,232,154,.32);color:#d4ffe4;border:1px solid rgba(122,232,154,.55)}
+.delta-chip.down{background:rgba(232,93,74,.32);color:#ffd0c2;border:1px solid rgba(232,93,74,.55)}
+.delta-chip.flat{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25)}
+.effect-tip{padding:7px 10px;background:rgba(255,217,102,.15);border-left:3px solid #ffd966;border-radius:7px;font-size:9.5px;color:#fff5d6;font-style:italic;line-height:1.4}
+.lock-btn{background:#7ae89a;color:#0a3d1f;border:none;border-radius:30px;padding:10px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:auto;flex-shrink:0}
+.lock-btn:disabled{opacity:.55;cursor:not-allowed}
+.lock-btn.continue{background:#ffd966}
+.survey-continue-btn{display:none;background:linear-gradient(135deg,#ffd966,#f5c542);color:#0a3d1f;border:none;border-radius:30px;padding:12px 20px;font-size:13.5px;font-weight:900;cursor:pointer;font-family:inherit;margin-top:10px;flex-shrink:0}
+.survey-continue-btn.show{display:block}
+
+/* ---------- MODALS ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,30,18,.55);backdrop-filter:blur(6px);display:flex;justify-content:center;align-items:center;z-index:1000;opacity:0;visibility:hidden;transition:all .25s;padding:20px}
+.modal-overlay.show{opacity:1;visibility:visible}
+.modal-card{background:#fff;border-radius:20px;padding:22px 26px;max-width:540px;width:100%;max-height:88vh;overflow-y:auto;border:2px solid #1e7e34}
+.modal-header{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.modal-icon{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#1e7e34,#34a853);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.modal-card h3{font-size:16.5px;font-weight:800;color:#145a2a}
+.modal-body{font-size:12.5px;color:#3d5775;line-height:1.55;margin-bottom:14px}
+.modal-summary{background:linear-gradient(145deg,#f4fbf6,#e8f4ec);border-radius:10px;padding:10px 14px;margin:10px 0;border:1px solid rgba(30,126,52,.15);font-size:11.5px}
+.modal-summary .row{display:flex;justify-content:space-between;padding:3px 0;gap:10px}
+.modal-summary .row strong{color:#145a2a;text-align:right}
+.modal-warning{padding:8px 12px;background:rgba(232,93,74,.1);border:1px solid rgba(232,93,74,.35);border-radius:8px;font-size:11.5px;color:#7a2e1f;margin-top:8px;line-height:1.4}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.modal-btn{padding:9px 18px;border-radius:30px;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:inherit}
+.modal-btn-cancel{background:#f0f4fa;color:#3d5775;border:1.5px solid #cddae9}
+.modal-btn-confirm{background:linear-gradient(135deg,#1e7e34,#34a853);color:#fff}
+.modal-btn-confirm.warning{background:linear-gradient(135deg,#e85d4a,#c44536)}
+
+footer{flex-shrink:0;padding:8px 22px;background:#f8fbf9;border-top:1px solid rgba(30,126,52,.08);font-size:9.5px;color:#6f8aa8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#34a853;margin-right:5px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><div class="logo-icon">📊</div><h1>FMCG Field Effort Simulator</h1></div>
+    <div class="badges">
+      <span class="badge-condition" id="conditionBadge">Condition: T2</span>
+      <span class="badge-live">● LIVE</span>
+      <div class="cond-switch" id="condSwitch">
+        <button data-c="T1">T1</button>
+        <button data-c="T2" class="on">T2</button>
+        <button data-c="T3">T3</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="task-tabs" id="taskTabs"></div>
+
+  <div class="strip">
+    <div class="strip-item">
+      <span class="strip-label">Contract this task</span>
+      <div class="strip-value" id="stripContract">—</div>
+    </div>
+    <div class="strip-item">
+      <span class="strip-label">What this interface shows you</span>
+      <div class="strip-value" id="stripShows">—</div>
+    </div>
+    <div class="strip-item">
+      <span class="strip-label">Day ledger</span>
+      <div class="strip-value" id="stripLedger">—</div>
+    </div>
+  </div>
+
+  <!-- Scrollable work queue -->
+  <div class="work-wrap" id="workPanel">
+    <div class="work-head">
+      <div>
+        <div class="work-title">🗂️ Field work queue</div>
+        <div class="work-sub">Each day you allocate unlocks one item. Answering an item spends that day permanently. Answer items to earn points — personal items score for you, team items score for your team.</div>
+      </div>
+      <div class="contract-pill" id="contractPill">—</div>
+    </div>
+    <div class="work-scroll" id="workScroll">
+      <div class="work-grid">
+        <div class="work-col">
+          <div class="work-col-head">
+            <div class="work-col-name">🚗 Your territory — personal quota</div>
+            <div class="work-col-badge" id="personalUnlockBadge">0 / 8</div>
+          </div>
+          <div id="personalItems"></div>
+        </div>
+        <div class="work-col">
+          <div class="work-col-head">
+            <div class="work-col-name">🤝 Team support — colleagues</div>
+            <div class="work-col-badge" id="teamUnlockBadge">0 / 8</div>
+          </div>
+          <div id="teamItems"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky simulator panels -->
+  <main id="mainGrid">
+    <section class="performance">
+      <div class="panel-title">📈 Your standing</div>
+      <div class="rank-card individual">
+        <div class="rank-header"><span class="header-icon">👤</span>Individual rank (10)</div>
+        <div class="rank-row" id="indRankRow">
+          <span class="rank-prefix">#</span><span class="rank-value" id="indRankVal">–</span>
+          <span class="rank-of">/ 10</span><span class="rank-movement flat" id="indMovement">–</span>
+        </div>
+        <div class="rank-row hidden" id="indProjectedRow"><span class="rank-value" id="indProjectedVal">–</span></div>
+        <div class="metric-section">
+          <div class="metric-top-row">
+            <span class="metric-name"><span class="star">★</span>Personal score</span>
+            <span class="metric-score" id="indMetricScore">0 pts</span>
+          </div>
+          <div class="metric-bar"><div class="metric-bar-fill fill-individual" id="indMetricFill" style="width:0%"></div></div>
+        </div>
+        <div class="promo-line hidden" id="promoLine"></div>
+      </div>
+      <div class="rank-card team">
+        <div class="rank-header"><span class="header-icon">👥</span>Team rank (24)</div>
+        <div class="rank-row" id="teamRankRow">
+          <span class="rank-prefix">#</span><span class="rank-value" id="teamRankVal">–</span>
+          <span class="rank-of">/ 24</span>
+        </div>
+        <div class="metric-section">
+          <div class="metric-top-row">
+            <span class="metric-name"><span class="star">★</span>Team score</span>
+            <span class="metric-score" id="teamMetricScore">0 pts</span>
+          </div>
+          <div class="metric-bar"><div class="metric-bar-fill fill-team" id="teamMetricFill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="leaderboards">
+      <div class="panel-title" id="middleTitle">🏆 Live leaderboard</div>
+
+      <div id="liveLeaderboards">
+        <div class="lb-card">
+          <h4>👤 Individual (10) <span class="lb-status">live</span></h4>
+          <div id="indLeaderboard"></div>
+        </div>
+        <div class="lb-card">
+          <h4>👥 Team (24) <span class="lb-status">live</span></h4>
+          <div id="teamLeaderboard"></div>
+        </div>
+        <div class="lb-footnote">
+          <div class="heading">📖 How to read the leaderboard</div>
+          <div>📌 Scores update the moment you answer an item.</div>
+          <div>▲ improved · ▼ declined, versus when you entered this task.</div>
+          <div>🏅 Dashed line = promotion cut-off (top 3).</div>
+        </div>
+      </div>
+
+      <div id="payoffPanel" class="hidden">
+        <div class="payoff-panel">
+          <h4>Pay &amp; ranking rules</h4>
+          <table class="payoff-table" id="payoffTable">
+            <tr><td>Your score</td><td id="payoffInd">—</td></tr>
+            <tr><td>Colleagues</td><td id="payoffTeam">—</td></tr>
+            <tr><td>Bonus</td><td id="payoffBonus">—</td></tr>
+          </table>
+          <div class="lb-footnote" style="margin-top:8px">
+            <div class="heading">ℹ️ No live feedback in this condition</div>
+            <div>You must infer your position from the rules above. No ranks, no projections, no live effect box.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="aiPanel" class="hidden">
+        <div class="ai-panel">
+          <h4>🤖 Allocation advisor</h4>
+          <div class="ai-rec">
+            <div class="ai-rec-row"><span>🚗 Your territory</span><strong id="aiRecInd">–</strong></div>
+            <div class="ai-rec-row"><span>🤝 Team support</span><strong id="aiRecTeam">–</strong></div>
+            <div class="ai-projection" id="aiProjection">—</div>
+          </div>
+          <button class="ai-accept-btn" onclick="acceptAI()">✅ Accept recommendation</button>
+          <div class="ai-note">The advisor uses a model not disclosed to you. You may adjust after accepting.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="control">
+      <div class="panel-title">🕹️ Effort allocation</div>
+
+      <div class="alloc-counter incomplete" id="allocCounter">
+        <div class="alloc-label">Allocated</div>
+        <div class="alloc-value"><span id="totalUsed">0</span> / 10 <span class="alloc-unit">days</span></div>
+        <div class="alloc-note" id="allocNote">—</div>
+      </div>
+
+      <div id="sliderPanel">
+        <div class="slider-group">
+          <div class="slider-group-label"><span class="header-icon">🚗</span> Your territory</div>
+          <div class="slider-row">
+            <span class="slider-end-label">0</span>
+            <div class="slider-track-wrap" id="indSliderTrack">
+              <div class="slider-badge" id="indBadge">0 days</div>
+              <div class="slider-track-bg">
+                <div class="slider-locked-fill" id="indLockedFill"></div>
+                <div class="slider-track-fill" id="indTrackFill"></div>
+                <div class="slider-thumb" id="indThumb"></div>
+              </div>
+            </div>
+            <span class="slider-end-label right">10</span>
+          </div>
+        </div>
+        <div class="slider-group" style="margin-top:8px">
+          <div class="slider-group-label"><span class="header-icon">🤝</span> Team support</div>
+          <div class="slider-row">
+            <span class="slider-end-label">0</span>
+            <div class="slider-track-wrap" id="teamSliderTrack">
+              <div class="slider-badge" id="teamBadge">0 days</div>
+              <div class="slider-track-bg">
+                <div class="slider-locked-fill" id="teamLockedFill"></div>
+                <div class="slider-track-fill" id="teamTrackFill"></div>
+                <div class="slider-thumb" id="teamThumb"></div>
+              </div>
+            </div>
+            <span class="slider-end-label right">10</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="staticInputPanel" class="hidden">
+        <div class="static-input-group">
+          <label class="static-input-label">🚗 Your territory (days)</label>
+          <div class="static-input-row"><input type="number" id="static-ind" min="0" max="10" value="5"><span class="static-input-unit">days</span></div>
+        </div>
+        <div class="static-input-group" style="margin-top:8px">
+          <label class="static-input-label">🤝 Team support (days)</label>
+          <div class="static-input-row"><input type="number" id="static-team" min="0" max="10" value="5"><span class="static-input-unit">days</span></div>
+        </div>
+      </div>
+
+      <div class="explanation" id="effectBox">
+        <div class="exp-title">📌 Live effect of your allocation</div>
+        <div id="expContent"></div>
+      </div>
+
+      <button class="lock-btn" id="lockBtn" onclick="onLock()">🔒 Lock this task &amp; continue</button>
+      <button class="survey-continue-btn" id="surveyContinueBtn" onclick="goToSurvey()">✅ Continue to survey →</button>
+    </section>
+  </main>
+
+  <footer>
+    <span><span class="dot"></span> Allocate days → unlock work items → answer to earn points</span>
+    <span>📊 All interactions logged confidentially.</span>
+  </footer>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-card">
+    <div class="modal-header"><div class="modal-icon">🔒</div><h3>Lock this task?</h3></div>
+    <div class="modal-body">
+      <div>You are about to lock your allocation and answers for this task.</div>
+      <div class="modal-summary" id="modalSummary"></div>
+      <div class="modal-warning" id="modalWarning" style="display:none"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="cancelLock()">← Go back</button>
+      <button class="modal-btn modal-btn-confirm" id="confirmBtn" onclick="confirmLock()">Lock it in ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const PARAMS = new URLSearchParams(location.search);
+const COND = (() => {
+  const c = (PARAMS.get('condition') || 'T2').toUpperCase();
+  return ['T1','T2','T3'].includes(c) ? c : 'T2';
+})();
+const SURVEY_URL = 'https://cityu.qualtrics.com/jfe/form/SV_dipEKIFu3tNQ0JM';
+
+const SHOWS = {
+  T1: 'Pay rules only — <strong>no ranks, no projections, no live effect box</strong>.',
+  T2: '<strong>Live leaderboard</strong>, rank movement, promotion gap and live effect box.',
+  T3: 'An <strong>advisor recommendation</strong> and a projected percentile band. The model is not shown.'
+};
+
+const CONTRACT_META = {
+  tournament: {
+    name: 'Tournament — top 3 of 10',
+    pill: 'TOURNAMENT · TOP 3 OF 10',
+    personalRule: 'Your score = personal work points. Rank is relative to 9 colleagues. Top 3 earn the promotion bonus.',
+    peersRule: 'Your team-support work lifts your rivals’ scores inside a fixed-prize tournament. Helping is structurally costly.',
+    bonusRule: 'Top 3 of 10 → promotion bonus. Everyone else → none.',
+    rec: { i: 6, t: 4 }
+  },
+  absolute: {
+    name: 'Absolute threshold — own target',
+    pill: 'ABSOLUTE · OWN TARGET 70',
+    personalRule: 'Your score = personal work points. Bonus if you clear 70. Rank is irrelevant to your pay.',
+    peersRule: 'Colleagues are frozen this task. Anything you do for them earns you nothing and costs you days.',
+    bonusRule: 'Score ≥ 70 → fixed bonus, independent of others.',
+    rec: { i: 6, t: 4 }
+  },
+  teamweight: {
+    name: 'Team-weighted — 25% multiplier',
+    pill: 'TEAM-WEIGHTED · 25% MULTIPLIER',
+    personalRule: 'Your score = personal work points × (0.75 + 0.25 × team performance).',
+    peersRule: 'Your team-support work lifts team performance, which multiplies your own score. Helping pays back.',
+    bonusRule: 'Multiplier applies to you and to peers. Top 3 of 10 also earn a bonus.',
+    rec: { i: 4, t: 6 }
+  }
+};
+
+const W = [1.0, 0.95, 0.85, 0.7, 0.5, 0.4, 0.3, 0.2];
+const WMAX = W.reduce((a,b)=>a+b,0);
+
+const has = re => t => re.test(t);
+const RUB = {
+  number:  { label: 'a number / quantity',   test: has(/\d/) },
+  timing:  { label: 'a date or lead time',   test: has(/\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next week|this week|by \w+day|within \d+\s*(day|hour|hr)|by \d)\b/i) },
+  ask:     { label: 'a specific ask',        test: has(/\b(please|could you|can you|confirm|send|advise|approve|arrange|share|schedule|need|propose|sign off|let me know)\b/i) },
+  reason:  { label: 'a reason / rationale',  test: has(/\b(because|since|so that|due to|as a result|to avoid|to protect|which means)\b/i) },
+  owner:   { label: 'who does what next',    test: has(/\b(i will|i'll|you will|you'll|please|owner|next step|i have|i've|already)\b/i) },
+  metric:  { label: 'a metric or result',    test: has(/\b(\d+\s*%|\d+\s*(units|cases|outlets|days)|\$[\d,]+|uplift|sell-?through|attainment|fill rate|share)\b/i) }
+};
+
+/* ============================================================
+   ITEM BANKS
+   ============================================================ */
+const BANKS = {
+  task1: {
+    personal: [
+      { type:'mc', q:'One call slot left. Which outlet do you visit?',
+        o:[['A — 1.2 km, 3% of territory volume, ordered 2 days ago, planogram compliant',0],
+           ['B — 4.5 km, 14% of volume, last order 21 days ago, two hero SKUs out of stock on shelf',1],
+           ['C — 0.8 km, 9% of volume, gondola end paid for, launching in 3 weeks',0.5]] },
+      { type:'mc', q:'A retailer wants 15% off for 4 weeks. Base volume 800 units/week, margin $4/unit. What incremental volume do you need just to break even?',
+        o:[['About +17%',1],['About +30%',0],['About +50%',0]] },
+      { type:'write', q:'Stock-out escalation to your distributor',
+        hint:'Write the WhatsApp message you would send. Scored on: a quantity, a date or lead time, and a specific ask.',
+        brief:['number','timing','ask'], minWords:15, placeholder:'Hi — we have a problem on the #1 SKU at ...' },
+      { type:'mc', q:'Your distributor holds 3 days of cover on the #1 SKU. Your top outlet ships in 5 days. Best action?',
+        o:[['Expedite a partial load from the regional DC — $180 cost, protects ~$4,200 of sales',1],
+           ['Offer a substitute SKU at the same price',0.5],['Do nothing — a 2-day gap is tolerable',0]] },
+      { type:'mc', q:'An outlet has cut your hero SKU from 4 facings to 2 to fit a competitor launch. First move?',
+        o:[['Escalate to the buyer and demand reinstatement',0.2],
+           ['Offer a 2-week secondary display in exchange for restoring one facing',1],
+           ['Accept it and move the spend to another outlet',0.5]] },
+      { type:'write', q:'Escalation note to your area manager on the competitor price attack',
+        hint:'Short escalation. Scored on: a number, a reason, and a specific ask.',
+        brief:['number','reason','ask'], minWords:15, placeholder:'Quick escalation — competitor has moved on ...' },
+      { type:'mc', q:'A distributor files a $2,300 damage claim. Photos cover 60% of cases; no signed delivery note. Best action?',
+        o:[['Approve in full to protect the relationship',0.3],
+           ['Approve 60% against evidence and require a signed POD going forward',1],
+           ['Reject the claim outright',0.4]] },
+      { type:'mc', q:'Order due for your top outlet. Last 4 weeks: 120, 118, 125, 122 cases. A local festival falls in 2 weeks. Recommendation?',
+        o:[['122 — the four-week average',0.4],
+           ['122 plus a 15–20% festival uplift, flagged for review',1],
+           ['150 — stock is cheap relative to a lost sale',0.2]] }
+    ],
+    team: [
+      { type:'mc', q:'A colleague’s key account is threatening delisting over a 6% price increase. Best support?',
+        o:[['Send the price-increase playbook and the three accounts where it landed',1],
+           ['Take the negotiation call yourself',0.4],['Tell them to hold price and offer a rebate',0.2]] },
+      { type:'mc', q:'A new rep’s distributor onboarding is stuck in credit check for 9 days. Best help?',
+        o:[['Send them the onboarding checklist',0.5],
+           ['Call credit yourself to unblock it while walking them through the escalation path',1],
+           ['Advise them to find a different distributor',0.1]] },
+      { type:'write', q:'Handover note to the colleague whose outlet you covered',
+        hint:'You covered their outlet on leave. Scored on: what happened, current status, who does what next.',
+        brief:['number','owner','ask'], minWords:15, placeholder:'Covered your outlet on Tuesday — here is where it stands ...' },
+      { type:'mc', q:'Two colleagues’ territories overlap on 12 outlets and both claim them. Your contribution?',
+        o:[['Propose a split based on historical sales and take it to the manager',1],
+           ['Stay out of it',0.1],['Back whoever asked you first',0.2]] },
+      { type:'mc', q:'A junior rep keeps failing planogram audits. Best help?',
+        o:[['Do their audits for them this month',0.5],
+           ['Walk two outlets together, show the routine, then let them do the rest',1],
+           ['Report it to their manager',0.1]] },
+      { type:'write', q:'Coaching message to the junior rep after a joint visit',
+        hint:'Sent after the visit. Scored on: one specific observation, one concrete fix, and a next check or date.',
+        brief:['reason','ask','timing'], minWords:15, placeholder:'Good visit today — two things to lock in before next week ...' },
+      { type:'mc', q:'A colleague suspects their distributor is over-claiming on a trade scheme. Best?',
+        o:[['Help them document the evidence and go to the manager together',1],
+           ['Tell them to drop it',0],['Escalate it yourself without them',0.4]] },
+      { type:'mc', q:'45 minutes before your next appointment. Best use of the time?',
+        o:[['Cold-call three small outlets nearby',0.4],
+           ['Return to the outlet whose planogram failed this morning and fix the display',1],
+           ['Catch up on CRM admin in the car',0.3]] }
+    ]
+  },
+  task2: {
+    personal: [
+      { type:'mc', q:'Promo proposal: $5,000 trade spend, forecast incremental margin $4,200. Decision?',
+        o:[['Approve — it builds the relationship',0.2],
+           ['Revise the mechanic to lift forecast margin above the spend',1],
+           ['Reject and move the budget',0.5]] },
+      { type:'mc', q:'A retailer wants 45-day payment terms against your standard 30. What matters most?',
+        o:[['The cash-flow cost of the extra 15 days and what you get in return',1],
+           ['Whether the buyer is friendly',0.2],
+           ['Whether other retailers will find out',0.5]] },
+      { type:'write', q:'Email to the buyer proposing revised promo terms',
+        hint:'Short email proposing revised mechanic. Scored on: the mechanic, the duration, and the investment or volume expectation.',
+        brief:['ask','timing','number'], minWords:18, placeholder:'Thanks for the discussion — here is the revised proposal ...' },
+      { type:'mc', q:'Shelf audit: 2 of 6 SKUs are out of stock two days before a promotion. First action?',
+        o:[['Fix availability before the promo, even if it delays the refresh',1],
+           ['Run the promo with 4 SKUs',0.4],['Escalate to the distributor and wait',0.2]] },
+      { type:'mc', q:'A seasonal SKU returns 8% of units post-festival. Best response?',
+        o:[['Negotiate a return credit and a swap into next season’s SKU',1],
+           ['Accept the return and write it off',0.4],['Refuse the return',0.2]] },
+      { type:'write', q:'Note to your category manager on the forecast uplift',
+        hint:'They need the number and reasoning. Scored on: the number, a reason, and the action you are requesting.',
+        brief:['number','reason','ask'], minWords:15, placeholder:'Forecast note for the festival period ...' },
+      { type:'mc', q:'A retailer is selling your SKU below the recommended price. Best first move?',
+        o:[['Discuss it with the buyer and explain the margin and brand risk',1],
+           ['Report them to the regional team immediately',0.4],['Match the price with a temporary pack',0.3]] },
+      { type:'mc', q:'You have 10 days and 8 personal items. What happens if you allocate 10 days to your territory?',
+        o:[['All 10 days used and all 8 items unlock',0.1],
+           ['Only 8 items unlock; 2 days wasted',1],['The extra 2 days roll over to team support',0.3]] }
+    ],
+    team: [
+      { type:'mc', q:'A peer asks for your best-practice deck. Under an absolute target, sending it earns you nothing. What do you do?',
+        o:[['Send it — the team benefits even if my score does not',1],
+           ['Send it only if I have spare time',0.5],['Say I will send it later and do not',0]] },
+      { type:'mc', q:'A colleague’s outlet list in the CRM is three months out of date. Best help?',
+        o:[['Send the corrections you already have',1],['Tell them to check it themselves',0.2],['Ignore it',0]] },
+      { type:'write', q:'Reply to a peer requesting your pricing benchmark data',
+        hint:'Short reply. Scored on: what you are sending, a caveat or condition, and the next step.',
+        brief:['owner','reason','ask'], minWords:15, placeholder:'Here is the benchmark file you asked for ...' },
+      { type:'mc', q:'A junior rep asks for 40 minutes of CRM coaching in your busiest week. Best response?',
+        o:[['Book 40 minutes and protect it',1],['Send them a guide instead',0.6],['Decline',0.2]] },
+      { type:'mc', q:'A colleague on leave asks you to cover one outlet visit. It earns you no points. Best response?',
+        o:[['Cover it and send a short note afterwards',1],['Cover it only if on your route',0.6],['Decline',0.1]] },
+      { type:'write', q:'Note to a peer about the joint visit request',
+        hint:'You cannot do the date proposed. Scored on: decision, a reason, and an alternative date or next step.',
+        brief:['ask','timing','reason'], minWords:15, placeholder:'About the joint visit on Thursday ...' },
+      { type:'mc', q:'A peer asks for your distributor escalation contact. Sharing takes two minutes. What do you do?',
+        o:[['Share it with a one-line note on how to use it',1],['Share the name only',0.5],['Do not share',0.2]] },
+      { type:'mc', q:'Under an absolute target, what is the rational allocation if team support earns you nothing?',
+        o:[['All 10 days to your territory',0.6],
+           ['8 days to territory, 2 to team support for goodwill',1],['5 and 5 to stay balanced',0.3]] }
+    ]
+  },
+  task3: {
+    personal: [
+      { type:'mc', q:'Joint business plan with a key account. Which two pillars do you lead with?',
+        o:[['Range and availability — data shows 2 lost listings and 6% OOS',1],
+           ['Brand investment — the account likes the marketing story',0.4],
+           ['Price — match the competitor',0.2]] },
+      { type:'mc', q:'New product launch, 3 outlets, limited stock. How do you prioritise?',
+        o:[['Highest-volume outlet first, then the two with the best visibility',1],
+           ['The three closest outlets to save travel',0.3],['The three that asked first',0.5]] },
+      { type:'write', q:'Joint business plan summary email to the key account',
+        hint:'The email after the JBP meeting. Scored on: the growth objective or number, two initiatives, and the commitment you are asking for.',
+        brief:['number','ask','owner'], minWords:20, placeholder:'Thank you for the session today — summarising what we agreed ...' },
+      { type:'mc', q:'Distributor business review. Which KPI do you open with?',
+        o:[['Service level — it drives every other number',1],['Total revenue',0.4],['Number of outlets covered',0.5]] },
+      { type:'mc', q:'Gondola compliance is 60% across your territory. Best plan?',
+        o:[['Fix the top 5 outlets by volume first, then cascade',1],
+           ['Fix every outlet in one week',0.4],['Ask the distributor to handle it',0.2]] },
+      { type:'write', q:'Launch recap to the team',
+        hint:'Sent to the wider team after launch week. Scored on: a metric or result, the tactic that worked, and an explicit request for others to adopt it.',
+        brief:['metric','reason','ask'], minWords:18, placeholder:'Launch week result — worth copying this ...' },
+      { type:'mc', q:'Two outlets are non-compliant on the promotion. Best action?',
+        o:[['Visit both, fix the display and photograph the correction',1],
+           ['Log the non-compliance in the system',0.4],['Wait for the next scheduled visit',0.1]] },
+      { type:'mc', q:'You are negotiating secondary placement. Which ask is strongest?',
+        o:[['A four-week floor stack tied to a measurable sales uplift',1],
+           ['A permanent gondola end',0.3],['Any additional space available',0.4]] }
+    ],
+    team: [
+      { type:'mc', q:'A cross-territory lead lands with you. Best action?',
+        o:[['Pass it to the owning colleague with full context the same day',1],
+           ['Keep it — you found it',0.2],['Send the name only',0.5]] },
+      { type:'mc', q:'A peer is preparing a negotiation with a tough buyer. Best support?',
+        o:[['Run a 20-minute role-play and share the concessions that worked',1],
+           ['Send them a negotiation tip sheet',0.6],['Tell them to hold firm on price',0.3]] },
+      { type:'write', q:'Handoff message for the cross-territory lead',
+        hint:'Message to the colleague who owns the account. Scored on: account and context, opportunity size, and next action with an owner.',
+        brief:['number','owner','ask'], minWords:15, placeholder:'Passing you a lead in your territory ...' },
+      { type:'mc', q:'Joint account planning for a regional retailer. Your contribution?',
+        o:[['Share category insights and the two growth levers you have tested',1],
+           ['Attend and take notes',0.5],['Skip it',0.1]] },
+      { type:'mc', q:'A colleague is presenting to a buyer using last year’s category data. Best help?',
+        o:[['Send the latest report and flag the two slides that changed',1],
+           ['Let them present',0],['Take the meeting yourself',0.3]] },
+      { type:'write', q:'Message to a colleague sharing category insight',
+        hint:'You found something the whole team could use. Scored on: the metric, why it matters, and what you want them to do with it.',
+        brief:['metric','reason','ask'], minWords:15, placeholder:'Found something in the category data you should use ...' },
+      { type:'mc', q:'A peer’s audit is due while they are travelling. Best action?',
+        o:[['Cover the audit and send them the photos and findings',1],
+           ['Tell their manager it will be late',0.3],['Leave it',0.1]] },
+      { type:'mc', q:'Under a team-weighted contract, what is the rational allocation?',
+        o:[['Shift days toward team support until its marginal return falls below territory work',1],
+           ['All 10 days to team support',0.3],['Always 5 and 5',0.4]] }
+    ]
+  }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const S = {
+  dwell: { lb:0, work:0, ctrl:0 },
+  lastMove: { t:null, region:null },
+  switches: 0,
+  // immediate point accumulation (separate from task lock)
+  points: { personal: 0, team: 0 }
+};
+
+const MOCK_PEERS = [
+  { name:'Priya (North)', base: 65, bias: 0.9 },
+  { name:'Marcus (East)', base: 60, bias: 0.85 },
+  { name:'Yuki (South)', base: 55, bias: 0.8 },
+  { name:'Alex',          base: 50, bias: 0.75 },
+  { name:'Chan',          base: 46, bias: 0.7 },
+  { name:'Li',            base: 42, bias: 0.65 },
+  { name:'Sam',           base: 38, bias: 0.6 },
+  { name:'Kim',           base: 34, bias: 0.55 },
+  { name:'Ravi',          base: 30, bias: 0.5 }
+];
+
+const TEAM_PEERS = ['Alfa','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta','Iota','Kappa','Lambda']
+  .map(n => ({ name:n, base: 30 + Math.random()*55 }));
+
+const TASK_ORDER = ['task1','task2','task3'];
+const CONTRACT_OF = { task1:'tournament', task2:'absolute', task3:'teamweight' };
+const contract = () => CONTRACT_OF[curTask];
+
+const freshTask = () => ({
+  indDays:0, teamDays:0, locked:false, startTime:null,
+  ansP:{}, ansT:{}, shownP:{}, shownT:{},
+  initInd:null, initTeam:null, startIndR:{}, startTeamR:{},
+  logs:[], finalData:null, renderedP:-1, renderedT:-1,
+  prevPPct: 0, prevTPct: 0
+});
+let TS = { task1:freshTask(), task2:freshTask(), task3:freshTask() };
+let curTask = 'task1';
+let maxAccess = 0, newUnlocked = null;
+let lastDir = null, osc = 0, firstInteract = null;
+let currentCond = COND;
+
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+   SCORING
+   ============================================================ */
+function scoreWriting(item, text){
+  const t = (text||'').trim();
+  const words = t ? t.split(/\s+/).length : 0;
+  if (words < item.minWords) return { credit:0, matched:[], words, short:true };
+  const matched = item.brief.map(k => RUB[k].test(t));
+  const n = matched.filter(Boolean).length;
+  return { credit: n/item.brief.length, matched, words, short:false };
+}
+
+function blockPoints(ans, items){
+  let pts = 0, count = 0;
+  items.forEach((it, i) => {
+    const a = ans[i];
+    if (a == null) return;
+    count++;
+    const c = it.type === 'mc' ? it.o[a][1] : (a.credit || 0);
+    pts += c * W[i];
+  });
+  return { pts, count };
+}
+
+const toPct = p => Math.max(0, Math.min(100, (p / WMAX) * 100));
+
+function localScores(st){
+  const bank = BANKS[curTask];
+  const P = blockPoints(st.ansP, bank.personal);
+  const T = blockPoints(st.ansT, bank.team);
+  return { pPct: toPct(P.pts), tPct: toPct(T.pts) };
+}
+
+function peerScores(ct, pPct, tPct){
+  return MOCK_PEERS.map(p => {
+    let s = p.base;
+    if (ct === 'tournament') s += tPct * 0.30 * p.bias;
+    else if (ct === 'teamweight') s += tPct * 0.12 * p.bias + pPct * 0.05;
+    return { name: p.name, score: Math.max(5, Math.min(100, s)) };
+  });
+}
+
+function teamPeerScores(tPct){
+  return TEAM_PEERS.map(t => ({ name: t.name, score: Math.max(5, Math.min(100, t.base + tPct * 0.25)) }));
+}
+
+function ranksFor(st, ct){
+  const { pPct, tPct } = localScores(st);
+  const userScore = ct === 'teamweight' ? pPct * (0.75 + 0.25 * (tPct/100)) : pPct;
+  const peers = peerScores(ct, pPct, tPct);
+  const ind = peers.concat([{ name:'You', score: userScore, isUser:true }]).sort((a,b)=>b.score-a.score);
+  const indRank = ind.findIndex(x=>x.isUser)+1;
+
+  const tPeers = teamPeerScores(tPct);
+  const team = tPeers.concat([{ name:'You', score: tPct, isUser:true }]).sort((a,b)=>b.score-a.score);
+  const teamRank = team.findIndex(x=>x.isUser)+1;
+
+  return { pPct, tPct, userScore, ind, indRank, team, teamRank };
+}
+
+function efficiency(st, ct){
+  const bank = BANKS[curTask];
+  const P = blockPoints(st.ansP, bank.personal);
+  const T = blockPoints(st.ansT, bank.team);
+  const pRate = P.count ? P.pts / P.count : 0.6;
+  const tRate = T.count ? T.pts / T.count : 0.6;
+  const cum = d => { let s=0; for (let i=0;i<Math.min(d,8);i++) s+=W[i]; return s; };
+  const at = d => {
+    const p = toPct(cum(d) * pRate);
+    const t = toPct(cum(10-d) * tRate);
+    return ct === 'teamweight' ? p * (0.75 + 0.25*(t/100)) : p;
+  };
+  let best = -1, bestD = 5;
+  for (let d=0; d<=10; d++){ const v = at(d); if (v > best){ best = v; bestD = d; } }
+  const actual = at(st.indDays);
+  return { actual:+actual.toFixed(1), optimal:+best.toFixed(1), bestD,
+           efficiency: best>0 ? +(actual/best).toFixed(3) : null,
+           personalRate:+pRate.toFixed(2), teamRate:+tRate.toFixed(2) };
+}
+
+/* ============================================================
+   POINT FLASH — visual feedback when score increases
+   ============================================================ */
+function flashScore(elId, text){
+  const el = $(elId);
+  if (!el) return;
+  el.textContent = text;
+  el.classList.add('bump');
+  setTimeout(() => el.classList.remove('bump'), 600);
+}
+
+function showPointPop(container, text, isTeam){
+  if (!container) return;
+  const pop = document.createElement('div');
+  pop.className = 'pt-pop' + (isTeam ? ' team' : '');
+  pop.textContent = text;
+  container.appendChild(pop);
+  setTimeout(() => pop.remove(), 1200);
+}
+
+/* ============================================================
+   LAYOUT BY CONDITION
+   ============================================================ */
+function applyCondition(){
+  $('conditionBadge').textContent = 'Condition: ' + currentCond;
+  $('stripShows').innerHTML = SHOWS[currentCond];
+  document.querySelectorAll('#condSwitch button').forEach(b => b.classList.toggle('on', b.dataset.c === currentCond));
+
+  ['liveLeaderboards','aiPanel','payoffPanel'].forEach(id => $(id).classList.add('hidden'));
+  ['indRankRow','teamRankRow','indMovement','promoLine'].forEach(id => $(id).classList.remove('hidden'));
+  ['indProjectedRow','teamProjectedRow'].forEach(id => $(id).classList.add('hidden'));
+  $('sliderPanel').classList.remove('hidden');
+  $('staticInputPanel').classList.add('hidden');
+  $('effectBox').classList.remove('hidden');
+  $('mainGrid').classList.remove('static-mode');
+
+  if (currentCond === 'T1'){
+    $('payoffPanel').classList.remove('hidden');
+    $('middleTitle').textContent = '📋 Pay & ranking rules';
+    $('sliderPanel').classList.add('hidden');
+    $('staticInputPanel').classList.remove('hidden');
+    $('effectBox').classList.add('hidden');
+    $('indRankRow').classList.add('hidden');
+    $('teamRankRow').classList.add('hidden');
+    $('indMovement').classList.add('hidden');
+    $('promoLine').classList.add('hidden');
+    $('mainGrid').classList.add('static-mode');
+  } else if (currentCond === 'T3'){
+    $('aiPanel').classList.remove('hidden');
+    $('middleTitle').textContent = '🤖 Allocation advisor';
+    $('effectBox').classList.add('hidden');
+    $('indRankRow').classList.add('hidden');
+    $('teamRankRow').classList.add('hidden');
+    $('indMovement').classList.add('hidden');
+    $('promoLine').classList.add('hidden');
+    $('indProjectedRow').classList.remove('hidden');
+    $('teamProjectedRow').classList.remove('hidden');
+  } else {
+    $('liveLeaderboards').classList.remove('hidden');
+    $('middleTitle').textContent = '🏆 Live leaderboard';
+  }
+}
+
+/* ============================================================
+   WORK QUEUE
+   ============================================================ */
+function renderQueue(force){
+  const st = TS[curTask];
+  const bank = BANKS[curTask];
+
+  if (force || st.renderedP !== st.indDays){
+    paintBlock('personalItems', bank.personal, st.indDays, st.ansP, 'P');
+    st.renderedP = st.indDays;
+  }
+  if (force || st.renderedT !== st.teamDays){
+    paintBlock('teamItems', bank.team, st.teamDays, st.ansT, 'T');
+    st.renderedT = st.teamDays;
+  }
+  $('personalUnlockBadge').textContent = Math.min(st.indDays,8) + ' / 8';
+  $('teamUnlockBadge').textContent = Math.min(st.teamDays,8) + ' / 8';
+}
+
+function paintBlock(containerId, items, days, ans, tag){
+  const box = $(containerId);
+  box.innerHTML = '';
+  items.forEach((item, i) => {
+    const unlocked = i < days;
+    const a = ans[i];
+    const div = document.createElement('div');
+    div.className = 'item' + (unlocked ? '' : ' locked') + (a != null ? ' answered' : '');
+
+    const tagHtml = item.type === 'mc'
+      ? '<span class="item-tag mc">Decision</span>'
+      : '<span class="item-tag write">Written</span>';
+
+    let body = '';
+    if (!unlocked){
+      const need = i - days + 1;
+      body = `<div class="item-lock">🔒 Needs ${need} more day${need>1?'s':''}</div>`;
+    } else if (item.type === 'mc'){
+      body = '<div class="opts">' + item.o.map((o, oi) =>
+        `<button class="opt${a===oi?' sel':''}" onclick="answerMC('${tag}',${i},${oi})">${o[0]}</button>`
+      ).join('') + '</div>';
+    } else {
+      const chips = item.brief.map(k => `<span class="chip">${RUB[k].label}</span>`).join('');
+      const val = a && a.text ? a.text.replace(/</g,'&lt;') : '';
+      body = `
+        <div class="chips">${chips}</div>
+        <textarea id="w-${tag}-${i}" placeholder="${item.placeholder.replace(/"/g,'&quot;')}"
+          oninput="answerWrite('${tag}',${i})">${val}</textarea>
+        <div class="wc" id="wc-${tag}-${i}">${a && a.words ? a.words + ' words' : '0 words'}</div>`;
+    }
+
+    div.innerHTML = `${tagHtml}
+      <div class="item-q">${i+1}. ${item.q}</div>
+      ${item.type==='write' && unlocked ? `<div class="item-hint">${item.hint}</div>` : ''}
+      ${body}`;
+    box.appendChild(div);
+  });
+}
+
+function answerMC(tag, idx, opt){
+  const st = TS[curTask];
+  if (st.locked) return;
+  if (firstInteract === null) firstInteract = performance.now();
+
+  const bank = BANKS[curTask];
+  const items = tag === 'P' ? bank.personal : bank.team;
+  const prev = st[tag === 'P' ? 'ansP' : 'ansT'][idx];
+  const prevCredit = prev != null ? items[idx].o[prev][1] : 0;
+  const newCredit = items[idx].o[opt][1];
+
+  st[tag === 'P' ? 'ansP' : 'ansT'][idx] = opt;
+
+  // point delta
+  const delta = (newCredit - prevCredit) * W[idx] * (100 / WMAX);
+  if (Math.abs(delta) > 0.01) {
+    if (tag === 'P') S.points.personal += delta;
+    else S.points.team += delta;
+    showPointPop(document.getElementById('indSliderTrack').closest('.app') || document.body,
+      (delta > 0 ? '+' : '') + delta.toFixed(1), tag === 'T');
+  }
+
+  st.logs.push({
+    event:'answer_mc', t: Math.round(performance.now()-st.startTime),
+    block: tag, item: idx, option: opt, credit: newCredit, delta: +delta.toFixed(2),
+    dwell:{...S.dwell}
+  });
+
+  renderQueue(true);
+  update();
+}
+
+function answerWrite(tag, idx){
+  const st = TS[curTask];
+  if (st.locked) return;
+  if (firstInteract === null) firstInteract = performance.now();
+
+  const bank = BANKS[curTask];
+  const items = tag === 'P' ? bank.personal : bank.team;
+  const item = items[idx];
+  const el = $('w-'+tag+'-'+idx);
+  const text = el.value;
+  const sc = scoreWriting(item, text);
+
+  const prev = st[tag === 'P' ? 'ansP' : 'ansT'][idx];
+  const prevCredit = prev && prev.credit != null ? prev.credit : 0;
+  const newCredit = sc.credit;
+
+  st[tag === 'P' ? 'ansP' : 'ansT'][idx] = { text, credit: sc.credit, matched: sc.matched, words: sc.words };
+
+  const delta = (newCredit - prevCredit) * W[idx] * (100 / WMAX);
+  if (Math.abs(delta) > 0.01) {
+    if (tag === 'P') S.points.personal += delta;
+    else S.points.team += delta;
+    showPointPop(el.closest('.item'), (delta > 0 ? '+' : '') + delta.toFixed(1), tag === 'T');
+  }
+
+  const wc = $('wc-'+tag+'-'+idx);
+  if (wc) wc.textContent = sc.words + ' words' + (sc.short ? ` — needs at least ${item.minWords}` : '');
+
+  if (!st['_wl_'+tag+idx] || Date.now() - st['_wl_'+tag+idx] > 900){
+    st['_wl_'+tag+idx] = Date.now();
+    st.logs.push({
+      event:'answer_write', t: Math.round(performance.now()-st.startTime),
+      block: tag, item: idx, words: sc.words, credit: +sc.credit.toFixed(2),
+      matched: sc.matched, delta: +delta.toFixed(2), dwell:{...S.dwell}
+    });
+  }
+  update();
+}
+
+/* ============================================================
+   SLIDERS
+   ============================================================ */
+function attachSlider(id, which){
+  const track = $(id);
+  let dragging = false;
+  const valFrom = x => {
+    const r = track.getBoundingClientRect();
+    return Math.max(0, Math.min(10, Math.round(((x-r.left)/r.width)*10)));
+  };
+  const apply = v => {
+    const st = TS[curTask];
+    if (st.locked) return;
+    const nP = Object.keys(st.ansP).length;
+    const nT = Object.keys(st.ansT).length;
+    v = Math.max(0, Math.min(10, v));
+
+    if (which === 'ind'){
+      v = Math.max(nP, v);
+      st.indDays = v;
+      if (st.indDays + st.teamDays > 10) st.teamDays = Math.max(nT, 10 - st.indDays);
+    } else {
+      v = Math.max(nT, v);
+      st.teamDays = v;
+      if (st.indDays + st.teamDays > 10) st.indDays = Math.max(nP, 10 - st.teamDays);
+    }
+    if (st.indDays + st.teamDays > 10) st.indDays = 10 - st.teamDays;
+
+    if (firstInteract === null) firstInteract = performance.now();
+    if (lastDir && lastDir !== which) osc++;
+    lastDir = which;
+
+    st.logs.push({ event:'allocate', t: Math.round(performance.now()-st.startTime),
+                   ind: st.indDays, team: st.teamDays, oscillation: osc, dwell:{...S.dwell} });
+    renderQueue();
+    update();
+  };
+  track.addEventListener('pointerdown', e => {
+    if (TS[curTask].locked) return;
+    dragging = true;
+    try { track.setPointerCapture(e.pointerId); } catch(_){}
+    apply(valFrom(e.clientX));
+  });
+  track.addEventListener('pointermove', e => { if (dragging) apply(valFrom(e.clientX)); });
+  const end = e => { if (!dragging) return; dragging = false; try { track.releasePointerCapture(e.pointerId); } catch(_){} };
+  track.addEventListener('pointerup', end);
+  track.addEventListener('pointercancel', end);
+  track.addEventListener('pointerleave', end);
+}
+
+function syncSliders(){
+  const st = TS[curTask];
+  const nP = Object.keys(st.ansP).length;
+  const nT = Object.keys(st.ansT).length;
+  const set = (pct, lockPct, fill, lock, thumb, badge, d) => {
+    $(fill).style.width = pct+'%';
+    $(lock).style.width = lockPct+'%';
+    $(thumb).style.left = pct+'%';
+    $(badge).style.left = pct+'%';
+    $(badge).textContent = d + (d===1?' day':' days');
+  };
+  set((st.indDays/10)*100, (nP/10)*100, 'indTrackFill','indLockedFill','indThumb','indBadge', st.indDays);
+  set((st.teamDays/10)*100, (nT/10)*100, 'teamTrackFill','teamLockedFill','teamThumb','teamBadge', st.teamDays);
+}
+
+function attachStatic(){
+  ['static-ind','static-team'].forEach((id, idx) => {
+    $(id).addEventListener('input', function(){
+      const st = TS[curTask];
+      if (st.locked) return;
+      const nP = Object.keys(st.ansP).length;
+      const nT = Object.keys(st.ansT).length;
+      let v = Math.max(0, Math.min(10, parseInt(this.value,10) || 0));
+      if (idx === 0){
+        v = Math.max(nP, v); st.indDays = v;
+        if (st.indDays + st.teamDays > 10) st.teamDays = Math.max(nT, 10 - st.indDays);
+      } else {
+        v = Math.max(nT, v); st.teamDays = v;
+        if (st.indDays + st.teamDays > 10) st.indDays = Math.max(nP, 10 - st.teamDays);
+      }
+      this.value = v;
+      if (firstInteract === null) firstInteract = performance.now();
+      st.logs.push({ event:'allocate', t: Math.round(performance.now()-st.startTime),
+                     ind: st.indDays, team: st.teamDays, oscillation: osc });
+      renderQueue(); update();
+    });
+  });
+}
+
+/* ============================================================
+   ATTENTION TRACKING
+   ============================================================ */
+function regionOf(el){
+  if (!el || !el.closest) return null;
+  if (el.closest('#liveLeaderboards') || el.closest('#aiPanel') || el.closest('#payoffPanel')) return 'lb';
+  if (el.closest('#workPanel')) return 'work';
+  if (el.closest('.control')) return 'ctrl';
+  return null;
+}
+document.addEventListener('pointermove', e => {
+  const now = performance.now();
+  const r = regionOf(e.target);
+  if (S.lastMove.region && S.lastMove.t != null){
+    S.dwell[S.lastMove.region] += Math.min(now - S.lastMove.t, 600);
+  }
+  if (S.lastMove.region && r && S.lastMove.region !== r){
+    if ((S.lastMove.region==='lb' && r==='work') || (S.lastMove.region==='work' && r==='lb')) S.switches++;
+  }
+  S.lastMove = { t: now, region: r };
+}, { passive:true });
+
+/* ============================================================
+   UPDATE
+   ============================================================ */
+function update(){
+  const st = TS[curTask];
+  if (st.locked) return;
+  const ct = contract();
+  const meta = CONTRACT_META[ct];
+
+  syncSliders();
+  $('static-ind').value = st.indDays;
+  $('static-team').value = st.teamDays;
+
+  const nP = Object.keys(st.ansP).length;
+  const nT = Object.keys(st.ansT).length;
+  const total = st.indDays + st.teamDays;
+  $('totalUsed').textContent = total;
+  const ac = $('allocCounter');
+  ac.classList.toggle('complete', total >= 10);
+  ac.classList.toggle('incomplete', total < 10);
+
+  const wasted = Math.max(0, st.indDays-8) + Math.max(0, st.teamDays-8);
+  $('allocNote').textContent =
+    `${nP} day${nP===1?'':'s'} spent on territory items · ${nT} on team items` +
+    (wasted ? ` · ⚠ ${wasted} day${wasted>1?'s':''} cannot be used` : '');
+
+  $('stripLedger').innerHTML =
+    `Allocated <strong>${total}/10</strong> · answered <strong>${nP+nT}</strong>` +
+    (wasted ? ` · wasted <strong>${wasted}</strong>` : '');
+  $('stripContract').innerHTML = `<strong>${meta.name}</strong>`;
+  $('contractPill').textContent = meta.pill;
+
+  const r = ranksFor(st, ct);
+
+  // personal score — flash on change
+  const pText = r.pPct.toFixed(1) + ' pts';
+  if ($('indMetricScore').textContent !== pText){
+    flashScore('indMetricScore', pText);
+  }
+  $('indMetricFill').style.width = r.pPct + '%';
+
+  // team score — flash on change
+  const tText = r.tPct.toFixed(1) + ' pts';
+  if ($('teamMetricScore').textContent !== tText){
+    flashScore('teamMetricScore', tText);
+  }
+  $('teamMetricFill').style.width = r.tPct + '%';
+
+  // update score deltas stored on task
+  st.prevPPct = r.pPct;
+  st.prevTPct = r.tPct;
+
+  if (currentCond === 'T2'){
+    if (st.initInd == null){
+      st.initInd = r.indRank;
+      st.initTeam = r.teamRank;
+      r.ind.forEach((x,i) => { if(!x.isUser) st.startIndR[x.name] = i+1; });
+      r.team.forEach((x,i) => { if(!x.isUser) st.startTeamR[x.name] = i+1; });
+    }
+    $('indRankVal').textContent = r.indRank;
+    $('teamRankVal').textContent = r.teamRank;
+    setMove('indMovement', st.initInd - r.indRank);
+    paintBoard('indLeaderboard', r.ind, st.initInd - r.indRank, st.startIndR);
+    paintBoard('teamLeaderboard', r.team, st.initTeam - r.teamRank, st.startTeamR);
+
+    $('promoLine').classList.remove('hidden');
+    if (ct === 'absolute'){
+      $('promoLine').innerHTML = `Bonus threshold <strong>70</strong>. You are at <strong>${r.pPct.toFixed(1)}</strong>.`;
+    } else {
+      const third = r.ind[2].score;
+      const gap = (third - r.userScore).toFixed(1);
+      $('promoLine').innerHTML = gap > 0
+        ? `Promotion cut-off <strong>${third.toFixed(1)}</strong>. You are <strong>${gap}</strong> below.`
+        : `You are inside the promotion zone. Third place is <strong>${third.toFixed(1)}</strong>.`;
+    }
+    paintEffect(r, ct, st);
+  } else if (currentCond === 'T3'){
+    if (st.initInd == null) st.initInd = r.indRank;
+    $('indProjectedVal').textContent = 'Top ' + Math.max(5, Math.round((r.indRank/10)*100)) + '%';
+    $('teamProjectedVal').textContent = 'Team ' + r.tPct.toFixed(0) + ' pts';
+    $('aiRecInd').textContent = meta.rec.i + ' days';
+    $('aiRecTeam').textContent = meta.rec.t + ' days';
+    $('aiProjection').textContent = 'Projected individual rank: Top ' +
+      Math.max(5, Math.round((r.indRank/10)*100)) + '%';
+  } else {
+    $('payoffInd').textContent = meta.personalRule;
+    $('payoffTeam').textContent = meta.peersRule;
+    $('payoffBonus').textContent = meta.bonusRule;
+  }
+
+  if (!window._last || Date.now() - window._last > 400){
+    window._last = Date.now();
+    st.logs.push({
+      event:'state', t: Math.round(performance.now()-st.startTime),
+      ind: st.indDays, team: st.teamDays, indRank: r.indRank, teamRank: r.teamRank,
+      pPct:+r.pPct.toFixed(1), tPct:+r.tPct.toFixed(1),
+      oscillation: osc, switches: S.switches, dwell:{...S.dwell}
+    });
+  }
+}
+
+function setMove(id, d){
+  const el = $(id);
+  if (!el) return;
+  el.className = 'rank-movement ' + (d>0?'up':d<0?'down':'flat');
+  el.textContent = d>0 ? '▲ +'+d : d<0 ? '▼ '+d : '–';
+}
+
+function paintBoard(containerId, list, userDiff, startMap){
+  const box = $(containerId);
+  if (!box) return;
+  box.innerHTML = '';
+  list.slice(0, 10).forEach((item, i) => {
+    const rank = i+1;
+    const row = document.createElement('div');
+    let cls = 'lb-row';
+    if (item.isUser) cls += ' user';
+    if (rank === 3) cls += ' promo';
+    row.className = cls;
+
+    let mv = '<span class="lb-movement flat">–</span>';
+    if (item.isUser){
+      if (userDiff > 0) mv = `<span class="lb-movement up">▲ +${userDiff}</span>`;
+      else if (userDiff < 0) mv = `<span class="lb-movement down">▼ ${userDiff}</span>`;
+    } else if (startMap[item.name] != null){
+      const d = startMap[item.name] - rank;
+      if (d > 0) mv = `<span class="lb-movement up">▲ +${d}</span>`;
+      else if (d < 0) mv = `<span class="lb-movement down">▼ ${d}</span>`;
+    }
+    row.innerHTML = `
+      <span class="lb-rank">#${rank}</span>
+      <span class="lb-avatar ${item.isUser?'user-avatar':''}">${item.isUser?'👤':'🧑'}</span>
+      <span class="lb-name">${item.isUser?'You':item.name}</span>
+      <span class="lb-score">${item.score.toFixed(0)}</span>${mv}`;
+    box.appendChild(row);
+  });
+}
+
+function paintEffect(r, ct, st){
+  const el = $('expContent');
+  el.innerHTML = '';
+  const chip = d => d>0 ? `<span class="delta-chip up">▲ +${d}</span>`
+                 : d<0 ? `<span class="delta-chip down">▼ ${d}</span>`
+                 : `<span class="delta-chip flat">— none</span>`;
+  const dI = st.initInd - r.indRank;
+
+  el.innerHTML = `
+    <div class="effect-card">
+      <div class="effect-card-header">
+        <span class="effect-card-title">🚗 Territory work → your score</span>
+        <span class="effect-days-badge">${st.indDays} d</span>
+      </div>
+      <div class="effect-rank-row">
+        <span class="effect-rank-label"><span class="er-icon">👤</span>Rank</span>
+        <span class="rank-flow">
+          <span class="rank-from">#${st.initInd}</span><span class="flow-arrow">→</span>
+          <span class="rank-to">#${r.indRank}</span>
+        </span>${chip(dI)}
+      </div>
+    </div>
+    <div class="effect-card">
+      <div class="effect-card-header">
+        <span class="effect-card-title">🤝 Team support → colleagues</span>
+        <span class="effect-days-badge">${st.teamDays} d</span>
+      </div>
+      <div class="effect-rank-row">
+        <span class="effect-rank-label"><span class="er-icon">👥</span>Team score</span>
+        <span class="rank-flow">
+          <span class="rank-to">${r.tPct.toFixed(0)}</span>
+          <span style="color:rgba(255,255,255,.55);font-size:10px">pts</span>
+        </span>
+      </div>
+    </div>
+    <div class="effect-tip">💡 ${CONTRACT_META[ct].peersRule}</div>`;
+}
+
+function acceptAI(){
+  const st = TS[curTask];
+  const rec = CONTRACT_META[contract()].rec;
+  const nP = Object.keys(st.ansP).length;
+  const nT = Object.keys(st.ansT).length;
+  st.indDays = Math.max(nP, rec.i);
+  st.teamDays = Math.max(nT, Math.min(10 - st.indDays, rec.t));
+  if (st.indDays + st.teamDays > 10) st.indDays = 10 - st.teamDays;
+  st.logs.push({ event:'ai_accept', t: Math.round(performance.now()-st.startTime),
+                 ind: st.indDays, team: st.teamDays });
+  renderQueue(true); update();
+}
+
+/* ============================================================
+   TASK SWITCHING
+   ============================================================ */
+function renderTabs(){
+  const box = $('taskTabs'); box.innerHTML = '';
+  TASK_ORDER.forEach((id, i) => {
+    const st = TS[id];
+    let cls = 'task-tab', status = 'Ready', icon = String(i+1);
+    if (st.locked){ cls += ' completed'; status = 'Completed'; icon = '✓'; }
+    else if (id === curTask){ cls += ' active'; status = 'In progress'; }
+    else if (i > maxAccess){ cls += ' locked'; status = 'Locked'; icon = '🔒'; }
+    if (id === newUnlocked) cls += ' newly-unlocked';
+    const b = document.createElement('button');
+    b.className = cls;
+    b.disabled = i > maxAccess;
+    b.innerHTML = `<span class="task-tab-icon">${icon}</span>
+      <span class="task-tab-label">Task ${i+1}</span>
+      <span class="task-tab-status">${status}</span>`;
+    b.onclick = () => switchTask(id);
+    box.appendChild(b);
+  });
+  newUnlocked = null;
+}
+
+function switchTask(id){
+  const i = TASK_ORDER.indexOf(id);
+  if (i > maxAccess) return;
+  curTask = id;
+  const st = TS[id];
+  const ct = contract();
+
+  if (st.startTime === null){
+    st.startTime = performance.now();
+    st.indDays = 5; st.teamDays = 5;
+  }
+
+  applyCondition();
+  $('stripContract').innerHTML = `<strong>${CONTRACT_META[ct].name}</strong>`;
+  $('contractPill').textContent = CONTRACT_META[ct].pill;
+  renderTabs();
+  renderQueue(true);
+  update();
+  updateLockBtn();
+  $('workScroll').scrollTop = 0;
+}
+
+/* ============================================================
+   LOCK
+   ============================================================ */
+function updateLockBtn(){
+  const st = TS[curTask];
+  const i = TASK_ORDER.indexOf(curTask);
+  const btn = $('lockBtn'), sb = $('surveyContinueBtn');
+  btn.classList.remove('continue');
+  sb.classList.remove('show');
+  btn.style.display = 'block';
+  btn.disabled = false;
+  if (st.locked){
+    if (i < TASK_ORDER.length - 1){
+      btn.textContent = `Continue to Task ${i+2} →`;
+      btn.classList.add('continue');
+    } else {
+      btn.style.display = 'none';
+      sb.classList.add('show');
+    }
+  } else {
+    btn.innerHTML = '🔒 Lock this task &amp; continue';
+  }
+}
+
+function onLock(){
+  const st = TS[curTask];
+  const i = TASK_ORDER.indexOf(curTask);
+  if (st.locked){
+    if (i < TASK_ORDER.length - 1) switchTask(TASK_ORDER[i+1]);
+    return;
+  }
+  openConfirm();
+}
+
+function openConfirm(){
+  const st = TS[curTask];
+  const ct = contract();
+  const r = ranksFor(st, ct);
+  const nP = Object.keys(st.ansP).length;
+  const nT = Object.keys(st.ansT).length;
+  const writesP = Object.values(st.ansP).filter(a => a && a.text).length;
+  const writesT = Object.values(st.ansT).filter(a => a && a.text).length;
+
+  $('modalSummary').innerHTML = `
+    <div class="row"><span>Contract</span><strong>${CONTRACT_META[ct].name}</strong></div>
+    <div class="row"><span>Days territory / team</span><strong>${st.indDays} / ${st.teamDays}</strong></div>
+    <div class="row"><span>Items answered</span><strong>${nP} / ${nT}</strong></div>
+    <div class="row"><span>Written responses</span><strong>${writesP} / ${writesT}</strong></div>
+    <div class="row"><span>Personal score</span><strong>${r.pPct.toFixed(1)} pts</strong></div>
+    <div class="row"><span>Team score</span><strong>${r.tPct.toFixed(1)} pts</strong></div>
+    <div class="row"><span>Your rank</span><strong>#${r.indRank} of 10</strong></div>`;
+
+  const spare = (st.indDays + st.teamDays) - (nP + nT);
+  if (spare > 0){
+    $('modalWarning').style.display = 'block';
+    $('modalWarning').innerHTML = `⚠️ You allocated days but left ${spare} unlocked item${spare>1?'s':''} unanswered. Those days earn nothing.`;
+    $('confirmBtn').classList.add('warning');
+    $('confirmBtn').textContent = 'Lock anyway ✓';
+  } else {
+    $('modalWarning').style.display = 'none';
+    $('confirmBtn').classList.remove('warning');
+    $('confirmBtn').textContent = 'Lock it in ✓';
+  }
+  $('confirmModal').classList.add('show');
+}
+function cancelLock(){ $('confirmModal').classList.remove('show'); }
+
+function confirmLock(){
+  $('confirmModal').classList.remove('show');
+  setTimeout(() => {
+    const st = TS[curTask];
+    if (st.locked) return;
+    st.locked = true;
+    const ct = contract();
+    const r = ranksFor(st, ct);
+    const eff = efficiency(st, ct);
+    const totalDwell = S.dwell.lb + S.dwell.work + S.dwell.ctrl || 1;
+
+    const writes = [];
+    ['ansP','ansT'].forEach(k => {
+      Object.keys(st[k]).forEach(i => {
+        const a = st[k][i];
+        if (a && a.text) writes.push({
+          block: k === 'ansP' ? 'personal' : 'team',
+          item: +i, text: a.text, words: a.words,
+          credit: +a.credit.toFixed(2), matched: a.matched
+        });
+      });
+    });
+
+    st.finalData = {
+      task: curTask,
+      contract: ct,
+      feedbackCondition: currentCond,
+      indDays: st.indDays,
+      teamDays: st.teamDays,
+      answersPersonal: st.ansP,
+      answersTeam: st.ansT,
+      writtenResponses: writes,
+      personalPct: +r.pPct.toFixed(1),
+      teamPct: +r.tPct.toFixed(1),
+      userScore: +r.userScore.toFixed(1),
+      indRank: r.indRank,
+      teamRank: r.teamRank,
+      allocationEfficiency: eff,
+      attention: {
+        leaderboardMs: Math.round(S.dwell.lb),
+        workMs: Math.round(S.dwell.work),
+        controlMs: Math.round(S.dwell.ctrl),
+        leaderboardShare: +(S.dwell.lb/totalDwell).toFixed(3),
+        workShare: +(S.dwell.work/totalDwell).toFixed(3),
+        leaderboardWorkSwitches: S.switches
+      },
+      oscillationCount: osc,
+      timeOnTaskMs: Math.round(performance.now() - st.startTime),
+      firstInteractionMs: firstInteract ? Math.round(firstInteract - st.startTime) : null,
+      peerSnapshot: peerScores(ct, r.pPct, r.tPct),
+      logs: st.logs
+    };
+
+    const i = TASK_ORDER.indexOf(curTask);
+    if (i < TASK_ORDER.length - 1){
+      maxAccess = Math.max(maxAccess, i+1);
+      newUnlocked = TASK_ORDER[i+1];
+    }
+    renderTabs();
+    updateLockBtn();
+    console.log('TASK_DATA', JSON.stringify(st.finalData, null, 2));
+  }, 200);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cancelLock(); });
+
+/* ============================================================
+   SURVEY
+   ============================================================ */
+function goToSurvey(){
+  const payload = {
+    condition: currentCond,
+    task1: TS.task1.finalData,
+    task2: TS.task2.finalData,
+    task3: TS.task3.finalData,
+    allCompleted: TS.task1.locked && TS.task2.locked && TS.task3.locked
+  };
+  const btn = $('surveyContinueBtn');
+  btn.textContent = '✅ Opening survey…'; btn.disabled = true;
+  try { localStorage.setItem('leaderboard_payload', JSON.stringify(payload)); } catch(_){}
+  try { window.parent.postMessage({ type:'LEADERBOARD_COMPLETE', payload }, '*'); } catch(_){}
+  const p = new URLSearchParams();
+  p.set('source','leaderboard');
+  p.set('completed', payload.allCompleted ? '1' : '0');
+  p.set('condition', currentCond);
+  setTimeout(() => {
+    const url = SURVEY_URL + '?' + p.toString();
+    try { (window.top && window.top !== window ? window.top : window).location.href = url; }
+    catch(_){ window.location.href = url; }
+  }, 600);
+}
+
+/* condition switcher */
+document.querySelectorAll('#condSwitch button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (!confirm(`Switch condition to ${b.dataset.c}? This will reload the simulator.`)) return;
+    const url = new URL(location.href);
+    url.searchParams.set('condition', b.dataset.c);
+    location.href = url.toString();
+  });
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+function boot(){
+  applyCondition();
+  renderTabs();
+  attachSlider('indSliderTrack','ind');
+  attachSlider('teamSliderTrack','team');
+  attachStatic();
+  switchTask('task1');
+}
+window.addEventListener('load', boot);
+window.getFinalData = () => ({
+  condition: currentCond,
+  task1: TS.task1.finalData,
+  task2: TS.task2.finalData,
+  task3: TS.task3.finalData,
+  allCompleted: TS.task1.locked && TS.task2.locked && TS.task3.locked
+});
+</script>
+</body>
+</html>
