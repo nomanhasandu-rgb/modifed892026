@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Effort Allocation Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #d9ece0;
+    min-height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+    padding: 20px;
+    user-select: none;
+}
+.app {
+    max-width: 1500px; width: 100%;
+    background: #ffffff; border-radius: 32px;
+    box-shadow: 0 24px 60px rgba(20, 90, 42, 0.15);
+    overflow: hidden;
+}
+header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 26px;
+    border-bottom: 1px solid rgba(30, 126, 52, 0.12);
+    flex-wrap: wrap; gap: 12px;
+}
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(30, 126, 52, 0.22);
+}
+.logo h1 { font-size: 17px; font-weight: 800; color: #145a2a; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.badge-live {
+    background: linear-gradient(135deg, #1e7e34, #34a853);
+    color: white;
+    font-size: 11px; font-weight: 700;
+    padding: 5px 12px; border-radius: 20px;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.65} }
+
+/* ====== NAV TABS (For Researcher Preview) ====== */
+.nav-tabs {
+    display: flex; gap: 4px;
+    padding: 12px 26px 0;
+    background: #ffffff;
+    border-bottom: 1px solid rgba(30, 126, 52, 0.08);
+}
+.nav-tabs.hidden { display: none; }
+.nav-tab {
+    padding: 10px 18px;
+    background: transparent;
+    border: none; border-bottom: 2.5px solid transparent;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    color: #6f8aa8; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s ease;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: -1px;
+}
+.nav-tab:hover { color: #145a2a; background: #f4fbf6; }
+.nav-tab.active {
+    color: #145a2a;
+    border-bottom-color: #1e7e34;
+    background: #f4fbf6;
+}
+.nav-tab .nav-tab-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px;
+    background: rgba(30, 126, 52, 0.12);
+    border-radius: 6px; font-size: 11px;
+    color: #1e7e34;
+}
+.nav-tab.active .nav-tab-icon {
+    background: #1e7e34; color: #ffffff;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr 0.9fr;
+    gap: 18px;
+    padding: 20px 26px 22px;
+    min-height: 600px;
+}
+@media (max-width: 1200px) { main { grid-template-columns: 1fr; } }
+.performance, .leaderboards, .control {
+    background: linear-gradient(165deg, #0a3d33 0%, #155a4a 100%);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 18px;
+    border: 1px solid rgba(122, 232, 210, 0.15);
+    box-shadow: 0 8px 24px rgba(10, 61, 51, 0.28);
+    display: flex; flex-direction: column;
+}
+.performance { gap: 10px; }
+.leaderboards { gap: 12px; }
+.control { gap: 12px; }
+.panel-title {
+    font-size: 11px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: #ffffff; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+}
+.panel-title::after {
+    content: ''; flex: 1; height: 1.5px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.28), transparent);
+}
+.header-icon, .label-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.28);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    color: #ffffff; font-size: 13px; flex-shrink: 0; line-height: 1;
+}
+.header-icon.team-icon, .label-icon.team-icon { width: 28px; height: 28px; font-size: 15px; }
+.rank-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 14px; padding: 12px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    margin-bottom: 10px;
+}
+.rank-card.individual { border-left: 4px solid #7ae89a; }
+.rank-card.team { border-left: 4px solid #e8c86a; }
+.rank-header {
+    font-size: 10.5px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: #ffffff; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+}
+.rank-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.rank-value { font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1; transition: transform 0.25s ease; }
+.rank-prefix { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.85); margin-right: 1px; }
+.rank-of { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); }
+.rank-movement {
+    font-size: 11px; font-weight: 800;
+    padding: 2px 8px; border-radius: 10px;
+    margin-left: auto; font-family: 'SF Mono', 'Courier New', monospace;
+    display: none;
+}
+.rank-movement.up { background: rgba(122, 232, 154, 0.28); color: #b3ffd1; }
+.rank-movement.down { background: rgba(232, 93, 74, 0.28); color: #ffb9a5; }
+.rank-movement.flat { background: rgba(255, 255, 255, 0.18); color: #ffffff; }
+.rank-note {
+    font-size: 10px; font-style: italic;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px; min-height: 14px; line-height: 1.4;
+}
+.metric-section {
+    margin-top: 4px; padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.2);
+}
+.metric-top-row {
+    display: flex; justify-content: space-between;
+    align-items: center; gap: 10px; margin-bottom: 6px;
+    white-space: nowrap;
+}
+.metric-name {
+    font-size: 11px; font-weight: 700; color: #ffffff;
+    display: flex; align-items: center; gap: 5px; 
+    white-space: nowrap;
+}
+.metric-name .star { color: #ffd966; font-size: 10px; flex-shrink: 0; }
+.metric-score {
+    font-size: 10.5px; font-weight: 800; color: #ffffff;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    white-space: nowrap; flex-shrink: 0;
+}
+.metric-bar {
+    width: 100%; height: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px; overflow: hidden;
+}
+.metric-bar-fill { height: 100%; border-radius: 10px; transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.fill-individual { background: linear-gradient(90deg, #7ae89a, #34a853); }
+.fill-team { background: linear-gradient(90deg, #e8c86a, #c99a2b); }
+
+.lb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lb-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px; padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.lb-card h4 {
+    font-size: 10.5px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: #ffffff; margin-bottom: 6px; padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.lb-header-row {
+    display: flex; align-items: center;
+    padding: 2px 4px 5px 4px;
+    font-size: 9.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.7);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    margin-bottom: 3px;
+}
+.lb-row {
+    display: flex; align-items: center;
+    padding: 4px 4px; border-radius: 6px;
+    font-size: 11px; gap: 6px;
+    transition: background 0.25s ease;
+}
+.lb-row:hover { background: rgba(255, 255, 255, 0.08); }
+.lb-row.user { background: rgba(255, 217, 102, 0.28); border-left: 3px solid #ffd966; border-radius: 6px 0 0 6px; }
+.lb-divider {
+    height: 1px;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.25) 0, rgba(255,255,255,0.25) 4px, transparent 4px, transparent 8px);
+    margin: 4px 4px;
+}
+.lb-rank { font-weight: 700; color: rgba(255,255,255,0.85); min-width: 22px; font-size: 10px; }
+.lb-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #e2e8f0; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+}
+.lb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.lb-avatar.user-avatar { border: 2px solid #ffd966; }
+.lb-name { flex: 1; color: #ffffff; font-size: 10.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-score { font-weight: 700; color: #ffffff; font-size: 10.5px; min-width: 24px; text-align: right; font-family: 'SF Mono', 'Courier New', monospace; }
+.lb-movement {
+    font-size: 8.5px; font-weight: 700;
+    padding: 1px 5px; border-radius: 8px;
+    min-width: 30px; text-align: center;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    display: none;
+}
+.lb-movement.up { background: rgba(122, 232, 154, 0.25); color: #b3ffd1; }
+.lb-movement.down { background: rgba(232, 93, 74, 0.25); color: #ffb9a5; }
+.lb-movement.flat { color: rgba(255,255,255,0.7); font-weight: 500; }
+.lb-footnote {
+    margin-top: auto; padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 10.5px; color: rgba(255, 255, 255, 0.92); line-height: 1.75;
+}
+.lb-footnote .heading { font-weight: 800; color: #ffffff; margin-bottom: 4px; font-size: 11.5px; }
+
+.alloc-counter { border-radius: 12px; padding: 12px 14px; transition: all 0.35s ease; }
+.alloc-counter.incomplete { background: rgba(232, 93, 74, 0.22); border: 1.5px solid rgba(232, 93, 74, 0.55); }
+.alloc-counter.complete { background: rgba(122, 232, 154, 0.18); border: 1.5px solid rgba(122, 232, 154, 0.55); }
+.alloc-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: #ffffff; margin-bottom: 3px; }
+.alloc-value { font-size: 24px; font-weight: 900; color: #b3ffd1; line-height: 1.1; }
+.alloc-counter.incomplete .alloc-value { color: #ffc2ad; }
+.alloc-unit { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.9); }
+
+.slider-group { background: rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 13px 12px; border: 1px solid rgba(255,255,255,0.12); }
+.slider-group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.slider-group-label { font-size: 12.5px; font-weight: 700; color: #ffffff; display: inline-flex; align-items: center; gap: 8px; }
+.slider-row { display: flex; align-items: center; gap: 10px; position: relative; padding-top: 30px; }
+.slider-end-label { font-size: 10.5px; font-weight: 700; color: #ffffff; font-family: 'SF Mono', 'Courier New', monospace; min-width: 44px; }
+.slider-end-label.right { text-align: right; }
+.slider-track-wrap { position: relative; flex: 1; height: 24px; cursor: pointer; touch-action: none; }
+.slider-track-bg {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    left: 0; right: 0; height: 8px;
+    background: rgba(255, 255, 255, 0.2); border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.slider-track-fill {
+    height: 100%; background: linear-gradient(90deg, #7ae89a, #34a853);
+    border-radius: 10px; transition: width 0.12s linear;
+}
+.slider-thumb {
+    position: absolute; top: 50%; left: 0;
+    width: 24px; height: 24px;
+    background: #ffffff; border: 3px solid #1e7e34; border-radius: 50%;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+    transform: translate(-50%, -50%); transition: left 0.12s linear;
+    z-index: 2; pointer-events: none;
+}
+.slider-badge {
+    position: absolute; bottom: calc(100% + 4px); left: 0;
+    transform: translateX(-50%); background: #ffffff; color: #0a3d1f;
+    font-size: 11px; font-weight: 900; padding: 3px 10px; border-radius: 8px;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    border: 2px solid #7ae89a; z-index: 3;
+}
+
+.explanation {
+    background: rgba(255,255,255,0.06);
+    border: 1.5px dashed rgba(255, 217, 102, 0.8);
+    border-radius: 12px; 
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.explanation .exp-title { 
+    font-size: 11px; font-weight: 800; 
+    text-transform: uppercase; letter-spacing: 0.5px; 
+    color: #ffd966; 
+    display: flex; align-items: center; gap: 6px;
+}
+.effect-card {
+    background: rgba(255, 255, 255, 0.08); 
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px; 
+    padding: 12px 14px;
+}
+.effect-card-header { 
+    display: flex; justify-content: space-between; align-items: center; 
+    margin-bottom: 12px; 
+}
+.effect-card-title { 
+    font-size: 12.5px; font-weight: 800; color: #ffffff; 
+    display: flex; align-items: center; gap: 6px;
+}
+.effect-days-badge { 
+    background: #7ae89a; color: #0a3d1f; 
+    font-family: 'SF Mono', monospace; font-size: 11px; font-weight: 900; 
+    padding: 2px 10px; border-radius: 20px; 
+}
+.effect-rank-row { 
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.effect-rank-left { 
+    display: flex; align-items: center; gap: 8px; 
+    font-size: 11.5px; font-weight: 700; color: #ffffff; white-space: nowrap;
+}
+.effect-rank-left .icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); font-size: 12px;
+}
+.rank-flow-container {
+    display: flex; align-items: center; gap: 8px; margin-left: auto;
+}
+.rank-flow { 
+    display: grid; 
+    grid-template-columns: 32px 12px 32px;
+    align-items: center;
+    font-family: 'SF Mono', monospace; 
+    font-variant-numeric: tabular-nums;
+    font-size: 11.5px; font-weight: 700;
+}
+.rank-from { text-align: right; color: rgba(255,255,255,0.7); }
+.flow-arrow { text-align: center; color: rgba(255,255,255,0.5); font-size: 10px; }
+.rank-to { text-align: left; color: #ffffff; font-weight: 900; }
+.delta-chip { 
+    font-family: 'SF Mono', monospace; font-size: 10px; font-weight: 900; 
+    height: 24px; width: 72px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; white-space: nowrap;
+}
+.delta-chip.up { background: rgba(122, 232, 154, 0.25); color: #b3ffd1; border: 1px solid rgba(122, 232, 154, 0.4); }
+.delta-chip.down { background: rgba(232, 93, 74, 0.25); color: #ffb9a5; border: 1px solid rgba(232, 93, 74, 0.4); }
+.delta-chip.flat { background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.7); border: 1px solid rgba(255, 255, 255, 0.2); }
+.effect-static { font-size: 11.5px; color: rgba(255, 255, 255, 0.85); font-style: italic; line-height: 1.55; }
+
+.lock-btn {
+    background: #7ae89a; color: #0a3d1f; border: none; border-radius: 30px;
+    padding: 13px 18px; font-size: 14px; font-weight: 800; cursor: pointer; margin-top: auto;
+}
+.lock-btn.survey-btn { background: #ffd966; display: none; }
+
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 30, 18, 0.75); backdrop-filter: blur(8px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000; opacity: 0; visibility: hidden;
+}
+.modal-overlay.show { opacity: 1; visibility: visible; }
+.modal-card {
+    background: #ffffff; border-radius: 22px; padding: 28px 32px;
+    max-width: 550px; width: 95%; box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+    border: 2px solid #1e7e34; max-height: 90vh; overflow-y: auto;
+}
+.modal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.modal-icon { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #1e7e34, #34a853); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.modal-card h3 { font-size: 18px; font-weight: 800; color: #145a2a; }
+.modal-body { font-size: 13px; color: #3d5775; line-height: 1.6; margin-bottom: 18px; }
+.modal-summary { background: #f4fbf6; border-radius: 12px; padding: 12px 16px; margin: 12px 0; border: 1px solid #e8f4ec; }
+.modal-summary .row { display: flex; justify-content: space-between; padding: 3px 0; }
+.modal-summary .row strong { color: #145a2a; }
+.modal-warning { padding: 10px 14px; background: rgba(232, 93, 74, 0.1); border: 1px solid rgba(232, 93, 74, 0.35); border-radius: 10px; font-size: 12.5px; color: #7a2e1f; margin-top: 10px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+.modal-btn { padding: 11px 22px; border-radius: 30px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; }
+.modal-btn-cancel { background: #f0f4fa; color: #3d5775; border: 1.5px solid #cddae9; }
+.modal-btn-confirm { background: linear-gradient(135deg, #1e7e34, #34a853); color: white; }
+
+/* Profile Setup Specific */
+.profile-setup { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb; }
+@media (max-width: 500px) { .profile-setup { flex-direction: column; align-items: center; text-align: center; } }
+.avatar-preview-box { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.avatar-preview {
+    width: 80px; height: 80px; border-radius: 50%; background: #e2e8f0;
+    border: 3px solid #1e7e34; overflow: hidden; position: relative;
+}
+.avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.avatar-btn {
+    padding: 5px 8px; border-radius: 20px; border: 1px solid #cddae9; background: #f8fafc;
+    font-size: 10px; font-weight: 700; color: #3d5775; cursor: pointer; font-family: inherit;
+}
+.avatar-btn:hover { background: #e2e8f0; }
+.name-inputs { flex: 1; }
+.name-inputs label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #5a8a6a; margin-bottom: 6px; display: block; }
+.name-inputs input[type="text"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cddae9; font-family: inherit; font-size: 13px; margin-bottom: 12px; }
+
+footer { padding: 12px 26px; background: #f8fbf9; border-top: 1px solid rgba(30, 126, 52, 0.08); font-size: 10.5px; color: #6f8aa8; display: flex; justify-content: space-between; }
+
+/* =========================================================
+   RESEARCHER DASHBOARD (Hidden)
+   ========================================================= */
+#adminDashboard {
+    display: none;
+    position: fixed; inset: 0; background: #0f172a; color: #f8fafc;
+    z-index: 9999; padding: 40px; overflow-y: auto; font-family: 'Inter', sans-serif;
+}
+#adminDashboard.show { display: block; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 20px; }
+.admin-header h1 { font-size: 24px; font-weight: 800; color: #38bdf8; }
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.admin-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+.admin-card h3 { font-size: 14px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 15px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.admin-table th, .admin-table td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+.admin-table th { color: #94a3b8; font-weight: 600; }
+.admin-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; font-family: monospace; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ========================================== -->
+<!-- RESEARCHER DASHBOARD (Hidden by default)   -->
+<!-- ========================================== -->
+<div id="adminDashboard">
+    <div class="admin-header">
+        <h1>🔬 ECIS Research Dashboard</h1>
+        <div style="font-size: 14px; color: #94a3b8;">Local Data & JSON Viewer</div>
+    </div>
+    <div class="admin-grid">
+        <div class="admin-card">
+            <h3>Local Session Logs (from this browser)</h3>
+            <div id="adminTableContainer"></div>
+        </div>
+        <div class="admin-card">
+            <h3>Analyze Qualtrics JSON Payload</h3>
+            <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">Paste the `data=` URL parameter value from Qualtrics to analyze remote subjects.</p>
+            <textarea id="adminJsonInput" class="admin-input" rows="6" placeholder='{"sessionId":"...", "condition":"A", ...}'></textarea>
+            <button onclick="analyzeJson()" style="padding: 10px 20px; background: #38bdf8; border: none; border-radius: 8px; font-weight: 800; cursor: pointer;">Analyze Data</button>
+            <div id="adminAnalysisResult" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- SUBJECT FACING UI                          -->
+<!-- ========================================== -->
+
+<div class="modal-overlay show" id="setupModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-icon">👥</div>
+            <h3>Setup Your Profile</h3>
+        </div>
+        <div class="modal-body">
+            <div class="profile-setup">
+                <div class="avatar-preview-box">
+                    <div class="avatar-preview">
+                        <img id="userAvatarImg" src="" alt="Avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%2364748b\'/><text x=\'50\' y=\'50\' font-size=\'45\' text-anchor=\'middle\' dominant-baseline=\'central\' fill=\'white\' font-family=\'sans-serif\'>U</text></svg>'">
+                    </div>
+                    <div class="avatar-actions">
+                        <button class="avatar-btn" onclick="randomizeAvatar('human')">👨 Human</button>
+                        <button class="avatar-btn" onclick="randomizeAvatar('animal')">🐶 Animal</button>
+                        <button class="avatar-btn" onclick="randomizeAvatar('robot')">🤖 Robot</button>
+                        <button class="avatar-btn" onclick="document.getElementById('avatarUpload').click()">📷 Upload</button>
+                        <input type="file" id="avatarUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                    </div>
+                </div>
+                <div class="name-inputs">
+                    <label>Your Name</label>
+                    <input type="text" id="userName" placeholder="Enter your name" value="You">
+                    <label>5 colleagues names from your sales territory</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <input type="text" id="name1" placeholder="Colleague 1">
+                        <input type="text" id="name2" placeholder="Colleague 2">
+                        <input type="text" id="name3" placeholder="Colleague 3">
+                        <input type="text" id="name4" placeholder="Colleague 4">
+                        <input type="text" id="name5" placeholder="Colleague 5">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn modal-btn-cancel" onclick="skipNames()">Use Defaults</button>
+            <button class="modal-btn modal-btn-confirm" onclick="saveSetup()">Start Simulation →</button>
+        </div>
+    </div>
+</div>
+
+<div class="app">
+    <header>
+        <div class="logo">
+            <div class="logo-icon">📊</div>
+            <h1>Effort Allocation Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <span class="badge-live">● LIVE</span>
+        </div>
+    </header>
+
+    <div class="nav-tabs" id="navTabs">
+        <button class="nav-tab active" data-cond="B" onclick="switchCondition('B')">
+            <span class="nav-tab-icon">🔒</span> Static Feedback
+        </button>
+        <button class="nav-tab" data-cond="A" onclick="switchCondition('A')">
+            <span class="nav-tab-icon">⚡</span> Live Feedback
+        </button>
+        <button class="nav-tab" data-cond="C" onclick="switchCondition('C')">
+            <span class="nav-tab-icon">🚫</span> No Leaderboard
+        </button>
+    </div>
+
+    <main>
+        <section class="performance">
+            <div class="panel-title">📈 Your Performance</div>
+
+            <div class="rank-card individual">
+                <div class="rank-header">
+                    <span class="header-icon">👤</span>
+                    Individual Rank
+                </div>
+                <div class="rank-row">
+                    <span class="rank-prefix">#</span>
+                    <span class="rank-value" id="indRankVal">12</span>
+                    <span class="rank-of" id="indRankOf">/ 120</span>
+                    <span class="rank-movement flat" id="indMovement">–</span>
+                </div>
+                <div class="rank-note" id="indRankNote"></div>
+                <div class="metric-section">
+                    <div class="metric-top-row">
+                        <span class="metric-name"><span class="star">★</span><span>Personal Sales Quota</span></span>
+                        <span class="metric-score" id="indMetricScore">5 / 10 days</span>
+                    </div>
+                    <div class="metric-bar"><div class="metric-bar-fill fill-individual" id="indMetricFill" style="width:50%"></div></div>
+                </div>
+            </div>
+
+            <div class="rank-card team">
+                <div class="rank-header">
+                    <span class="header-icon team-icon">👥</span>
+                    Team Rank
+                </div>
+                <div class="rank-row">
+                    <span class="rank-prefix">#</span>
+                    <span class="rank-value" id="teamRankVal">15</span>
+                    <span class="rank-of" id="teamRankOf">/ 24</span>
+                    <span class="rank-movement flat" id="teamMovement">–</span>
+                </div>
+                <div class="rank-note" id="teamRankNote"></div>
+                <div class="metric-section">
+                    <div class="metric-top-row">
+                        <span class="metric-name"><span class="star">★</span><span>Helping a Team Member</span></span>
+                        <span class="metric-score" id="teamMetricScore">5 / 10 days</span>
+                    </div>
+                    <div class="metric-bar"><div class="metric-bar-fill fill-team" id="teamMetricFill" style="width:50%"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="leaderboards">
+            <div class="panel-title" id="lbTitle">🏆 Leaderboard Projection</div>
+            <div class="lb-grid">
+                <div class="lb-card">
+                    <h4>👤 Individual (120)</h4>
+                    <div id="indLeaderboard"></div>
+                </div>
+                <div class="lb-card">
+                    <h4>👥 Team (24)</h4>
+                    <div id="teamLeaderboard"></div>
+                </div>
+            </div>
+            <div class="lb-footnote">
+                <div class="heading">📖 How to read the leaderboards:</div>
+                <div id="lbFootnoteText">📌 The leaderboard positions are projected. They may vary based on other participants' efforts.</div>
+                <div>🏅 Only the top 10 individuals and teams are shown.</div>
+            </div>
+        </section>
+
+        <section class="control">
+            <div class="panel-title">🕹️ Effort Allocation</div>
+
+            <div class="alloc-counter complete" id="allocCounter">
+                <div class="alloc-label">Allocated</div>
+                <div class="alloc-value"><span id="totalUsed">10</span> / 10 <span class="alloc-unit">Days</span></div>
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-group-header">
+                    <span class="slider-group-label"><span class="label-icon">💰</span>Personal Sales Quota</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-end-label">0 days</span>
+                    <div class="slider-track-wrap" id="indSliderTrack">
+                        <div class="slider-badge" id="indBadge">5 days</div>
+                        <div class="slider-track-bg">
+                            <div class="slider-track-fill" id="indTrackFill"></div>
+                            <div class="slider-thumb" id="indThumb"></div>
+                        </div>
+                    </div>
+                    <span class="slider-end-label right">10 days</span>
+                </div>
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-group-header">
+                    <span class="slider-group-label"><span class="label-icon">🤝</span>Helping a Team Member</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-end-label">0 days</span>
+                    <div class="slider-track-wrap" id="teamSliderTrack">
+                        <div class="slider-badge" id="teamBadge">5 days</div>
+                        <div class="slider-track-bg">
+                            <div class="slider-track-fill" id="teamTrackFill"></div>
+                            <div class="slider-thumb" id="teamThumb"></div>
+                        </div>
+                    </div>
+                    <span class="slider-end-label right">10 days</span>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <div class="exp-title" id="expTitle">📌 LIVE EFFECT OF YOUR ALLOCATION</div>
+                <div id="expContent"></div>
+            </div>
+
+            <button class="lock-btn" id="lockBtn" onclick="openConfirmModal()">🔒 Lock Decision &amp; Continue</button>
+            <button class="lock-btn survey-btn" id="surveyBtn" onclick="goToSurvey()">✅ Proceed to Survey →</button>
+        </section>
+    </main>
+
+    <footer>
+        <span><span class="dot"></span> Drag sliders to allocate · Total = 10 days</span>
+        <span>📊 All interactions logged confidentially.</span>
+    </footer>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-icon">🔒</div>
+            <h3>Confirm Your Allocation</h3>
+        </div>
+        <div class="modal-body">
+            <div>You are about to lock in your effort allocation for this task.</div>
+            <div class="modal-summary" id="modalSummary"></div>
+            <div class="modal-warning" id="modalWarning" style="display:none;"></div>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn modal-btn-cancel" onclick="cancelLock()">← Revise Allocation</button>
+            <button class="modal-btn modal-btn-confirm" id="confirmBtn" onclick="confirmLock()">OK, Lock It In ✓</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   RESEARCHER DASHBOARD & SECURITY CHECK
+   ═══════════════════════════════════════════════════════════════ */
+const ADMIN_PASSWORD = "ECIS2026";
+const urlParams = new URLSearchParams(location.search);
+
+if (urlParams.get('role') === 'admin') {
+    const pwd = prompt("Enter Researcher Password:");
+    if (pwd === ADMIN_PASSWORD) {
+        document.getElementById('adminDashboard').classList.add('show');
+        document.querySelector('.app').style.display = 'none';
+        loadAdminData();
+    } else {
+        alert("Incorrect password.");
+        window.location.href = window.location.pathname;
+    }
+}
+
+function loadAdminData() {
+    const container = document.getElementById('adminTableContainer');
+    const data = JSON.parse(localStorage.getItem('effort_all_sessions') || '[]');
+    
+    if (data.length === 0) {
+        container.innerHTML = "<p style='color:#94a3b8;'>No local data found. Data saves here only for testing on this specific browser.</p>";
+        return;
+    }
+    
+    let html = `<table class="admin-table">
+        <tr><th>Session ID</th><th>Cond</th><th>Time (ms)</th><th>Moves</th><th>Hesitation (ms)</th><th>Final Alloc</th></tr>`;
+    
+    data.forEach(s => {
+        html += `<tr>
+            <td style="font-family:monospace;">${s.sessionId.slice(-6)}</td>
+            <td><strong style="color:${s.condition==='A'?'#38bdf8':s.condition==='C'?'#ef4444':'#ffd966'}">${s.condition}</strong></td>
+            <td>${s.durationMs}</td>
+            <td>${s.sliderMovesCount}</td>
+            <td>${s.hesitationMs || 'N/A'}</td>
+            <td>${s.finalAllocation.personalDays} / ${s.finalAllocation.helpingDays}</td>
+        </tr>`;
+    });
+    html += `</table>`;
+    container.innerHTML = html;
+}
+
+function analyzeJson() {
+    const raw = document.getElementById('adminJsonInput').value;
+    const res = document.getElementById('adminAnalysisResult');
+    try {
+        const d = JSON.parse(raw);
+        res.innerHTML = `
+            <div style="background:#0f172a; padding:15px; border-radius:8px; border:1px solid #334155;">
+                <p style="margin-bottom:8px;"><strong>Session ID:</strong> ${d.sessionId || 'N/A'}</p>
+                <p style="margin-bottom:8px;"><strong>Condition:</strong> <span style="color:${d.condition==='A'?'#38bdf8':d.condition==='C'?'#ef4444':'#ffd966'}">${d.condition}</span></p>
+                <p style="margin-bottom:8px;"><strong>Total Time:</strong> ${d.durationMs} ms</p>
+                <p style="margin-bottom:8px;"><strong>Hesitation (Time from last move to lock):</strong> ${d.hesitationMs} ms</p>
+                <p style="margin-bottom:8px;"><strong>Total Slider Moves:</strong> ${d.sliderMovesCount}</p>
+                <p style="margin-bottom:8px;"><strong>Direction Switches (Oscillation):</strong> ${d.directionSwitches}</p>
+                <p style="margin-bottom:8px;"><strong>Final Allocation:</strong> ${d.finalAllocation.personalDays} Personal / ${d.finalAllocation.helpingDays} Team</p>
+                <p style="margin-bottom:8px;"><strong>Final Ranks:</strong> Ind #${d.finalRanks.individual}, Team #${d.finalRanks.team}</p>
+                <div style="margin-top:15px; font-size:11px; color:#64748b;">
+                    * Mouse log has ${d.mouseLog ? d.mouseLog.length : 0} captured movements.
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        res.innerHTML = `<p style="color:#ef4444;">Invalid JSON format.</p>`;
+    }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CORE EXPERIMENT CONFIG & STATE
+   ═══════════════════════════════════════════════════════════════ */
+const SURVEY_B = 'https://cityu.qualtrics.com/jfe/form/SV_dipEKIFu3tNQ0JM?source=leaderboard&completed=1';
+const SURVEY_A = 'https://cityu.qualtrics.com/jfe/form/SV_5ax0AweWGJZ8eVM';
+const SURVEY_C = 'https://cityu.qualtrics.com/jfe/form/SV_5ax0AweWGJZ8eVM'; // You can change this for C
+
+const LOCKED_COND = urlParams.get('cond') ? (urlParams.get('cond').toUpperCase() === 'A' ? 'A' : urlParams.get('cond').toUpperCase() === 'C' ? 'C' : 'B') : null;
+let currentCondition = LOCKED_COND || 'B'; 
+
+const BASELINE_DAYS = 5;
+const TOTAL_DAYS = 10;
+const BASELINE_IND_RANK = 12;
+const BASELINE_TEAM_RANK = 15;
+const TOTAL_IND = 120;
+const TOTAL_TEAM = 24;
+const USER_TEAM_NAME = 'Sigma';
+
+function generateSessionId() {
+    return 'S_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 7).toUpperCase();
+}
+
+const state = {
+    sessionId: generateSessionId(),
+    condition: currentCondition,
+    indDays: BASELINE_DAYS,
+    teamDays: BASELINE_DAYS,
+    locked: false,
+    startTime: Date.now(),
+    firstMoveTime: null,
+    lockTime: null,
+    lastMoveTime: null,
+    sliderMoves: 0,
+    directionSwitches: 0,
+    lastNet: 0,
+    lastDirection: 0,
+    exploredConfigs: [[BASELINE_DAYS, BASELINE_DAYS]],
+    exploredSet: new Set([`${BASELINE_DAYS}-${BASELINE_DAYS}`]),
+    eventLog: [],
+    mouseLog: [],
+    userProfile: { name: 'You', avatarUrl: '' }
+};
+
+const $ = id => document.getElementById(id);
+
+let lastMouseTime = 0;
+document.addEventListener('mousemove', (e) => {
+    if (state.locked) return;
+    const now = Date.now();
+    if (now - lastMouseTime > 100) {
+        state.mouseLog.push({ t: now - state.startTime, x: e.clientX, y: e.clientY, type: 'move' });
+        lastMouseTime = now;
+    }
+});
+document.addEventListener('mousedown', (e) => {
+    if (state.locked) return;
+    state.mouseLog.push({ t: Date.now() - state.startTime, x: e.clientX, y: e.clientY, type: 'click' });
+});
+
+function getProfessionalHumanAvatar(seed) { return `https://api.dicebear.com/7.x/micah/svg?seed=${encodeURIComponent(seed)}&backgroundColor=f1f5f9,e2e8f0`; }
+function getRobotAvatar(seed) { return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}&backgroundColor=f1f5f9,e2e8f0`; }
+function getAnimalAvatar(seed) {
+    const animals = ['🐶', '🐱', '🦊', '🐼', '🐸', '🐧', '🦁', '🐯', '🐮', '🐷', '🐵', '🦄'];
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    const emoji = animals[Math.abs(hash) % animals.length];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23e2e8f0"/><text x="50" y="50" font-size="60" text-anchor="middle" dominant-baseline="central">${emoji}</text></svg>`;
+    return `data:image/svg+xml;utf8,${svg}`;
+}
+function generateAvatar(seed, type = 'human') {
+    if (type === 'animal') return getAnimalAvatar(seed);
+    if (type === 'robot') return getRobotAvatar(seed);
+    return getProfessionalHumanAvatar(seed);
+}
+window.randomizeAvatar = function(type) {
+    const randomSeed = Math.random().toString(36).substring(7);
+    $('userAvatarImg').src = generateAvatar(randomSeed, type);
+};
+window.handleImageUpload = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const size = 128;
+                canvas.width = size; canvas.height = size;
+                const minDim = Math.min(img.width, img.height);
+                const sx = (img.width - minDim) / 2;
+                const sy = (img.height - minDim) / 2;
+                ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+                $('userAvatarImg').src = canvas.toDataURL('image/jpeg');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+const FIRST_M = ['James', 'John', 'Robert', 'Michael', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Charles', 'Daniel', 'Matthew'];
+const FIRST_F = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen', 'Lisa', 'Nancy'];
+const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+
+function generateRealisticProfile() {
+    const isMale = Math.random() > 0.5;
+    const first = isMale ? FIRST_M[Math.floor(Math.random() * FIRST_M.length)] : FIRST_F[Math.floor(Math.random() * FIRST_F.length)];
+    const last = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+    return { name: `${first} ${last.charAt(0)}.` };
+}
+
+function scoreFromDays(days) { return Math.max(0, Math.min(85, 30 + days * 5.5)); }
+
+const IND_PEERS = (() => {
+    const peers = [];
+    const scores = [99, 97, 94, 91, 88, 86, 80, 75, 70, 65, 62, 60, 50];
+    scores.forEach(s => peers.push({ score: s }));
+    for (let i = 0; i < 106; i++) peers.push({ score: (i * 49) / 105 });
+    peers.forEach(p => {
+        const profile = generateRealisticProfile();
+        p.name = profile.name;
+        const r = Math.random();
+        let type = 'human';
+        if (r > 0.7 && r <= 0.85) type = 'robot';
+        if (r > 0.85) type = 'animal';
+        p.avatar = generateAvatar(p.name, type);
+        p.isCustom = false;
+    });
+    return peers;
+})();
+
+const TEAM_NAMES = ['Alfa', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta', 'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omicron', 'Pi', 'Rho', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'];
+const TEAM_PEERS = (() => {
+    const peers = [];
+    const scores = [99, 97, 95, 93, 91, 89, 87, 86, 85.5, 82, 78, 72, 65, 60, 50, 45, 40, 35, 30, 25, 20, 15, 10];
+    scores.forEach((s, i) => peers.push({ name: TEAM_NAMES[i], score: s, avatar: `https://api.dicebear.com/7.x/shapes/svg?seed=${TEAM_NAMES[i]}&backgroundColor=c0aede,d1d4f9,b6e3f4` }));
+    return peers;
+})();
+
+function computeRank(peers, yourScore, isTeam) {
+    const userName = isTeam ? `${USER_TEAM_NAME} (Your team)` : state.userProfile.name;
+    const userAvatar = isTeam ? `https://api.dicebear.com/7.x/shapes/svg?seed=${USER_TEAM_NAME}&backgroundColor=c0aede,d1d4f9,b6e3f4` : state.userProfile.avatarUrl;
+    const all = [...peers, { name: userName, score: yourScore, isUser: true, avatar: userAvatar }];
+    all.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (a.isUser) return -1;
+        if (b.isUser) return 1;
+        return 0;
+    });
+    return { rank: all.findIndex(x => x.isUser) + 1, sorted: all };
+}
+
+function projectedIndRank(days) { return computeRank(IND_PEERS, scoreFromDays(days), false).rank; }
+function projectedTeamRank(days) { return computeRank(TEAM_PEERS, scoreFromDays(days), true).rank; }
+
+window.randomizeAvatar('human');
+
+window.skipNames = function() {
+    $('setupModal').classList.remove('show');
+    startSim();
+};
+
+window.saveSetup = function() {
+    const userName = $('userName').value.trim() || 'You';
+    state.userProfile.name = userName;
+    state.userProfile.avatarUrl = $('userAvatarImg').src;
+
+    const names = [];
+    for (let i = 1; i <= 5; i++) {
+        const val = $('name' + i).value.trim();
+        if (val) names.push(val);
+    }
+    if (names.length > 0) {
+        const indices = [];
+        while (indices.length < names.length) {
+            const idx = Math.floor(Math.random() * IND_PEERS.length);
+            if (!indices.includes(idx)) indices.push(idx);
+        }
+        indices.forEach((idx, i) => {
+            IND_PEERS[idx].name = names[i];
+            IND_PEERS[idx].avatar = generateAvatar(names[i], 'human');
+            IND_PEERS[idx].isCustom = true;
+        });
+    }
+    $('setupModal').classList.remove('show');
+    startSim();
+};
+
+window.switchCondition = function(cond) {
+    if (LOCKED_COND) return;
+    if (state.condition === cond) return;
+
+    state.condition = cond;
+    state.indDays = BASELINE_DAYS;
+    state.teamDays = BASELINE_DAYS;
+    state.locked = false;
+    state.startTime = Date.now();
+    state.firstMoveTime = null;
+    state.lockTime = null;
+    state.lastMoveTime = null;
+    state.sliderMoves = 0;
+    state.directionSwitches = 0;
+    state.lastNet = 0;
+    state.lastDirection = 0;
+    state.exploredConfigs = [[BASELINE_DAYS, BASELINE_DAYS]];
+    state.exploredSet = new Set([`${BASELINE_DAYS}-${BASELINE_DAYS}`]);
+    state.eventLog = [];
+    state.mouseLog = [];
+    state.finalIndRank = null;
+    state.finalTeamRank = null;
+
+    $('lockBtn').style.display = 'block';
+    $('surveyBtn').style.display = 'none';
+    $('lockBtn').disabled = false;
+    $('lockBtn').innerHTML = '🔒 Lock Decision &amp; Continue';
+    $('indSliderTrack').classList.remove('dragging');
+    $('teamSliderTrack').classList.remove('dragging');
+
+    document.querySelectorAll('.nav-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.cond === cond);
+    });
+
+    if (cond === 'A') $('lbTitle').textContent = '🏆 Live Leaderboard Projection';
+    else if (cond === 'C') $('lbTitle').textContent = '🏆 Leaderboard Projection (Hidden)';
+    else $('lbTitle').textContent = '🏆 Leaderboard Projection';
+
+    update();
+};
+
+function recordMove(source) {
+    if (state.locked) return;
+    const now = Date.now();
+    if (state.firstMoveTime === null) state.firstMoveTime = now;
+    state.lastMoveTime = now;
+    state.sliderMoves++;
+
+    const net = state.indDays - state.teamDays;
+    const delta = net - state.lastNet;
+    const dir = delta > 0 ? 1 : delta < 0 ? -1 : 0;
+    if (dir !== 0) {
+        if (state.lastDirection !== 0 && dir !== state.lastDirection) state.directionSwitches++;
+        state.lastDirection = dir;
+    }
+    state.lastNet = net;
+
+    const key = `${state.indDays}-${state.teamDays}`;
+    if (!state.exploredSet.has(key)) {
+        state.exploredSet.add(key);
+        state.exploredConfigs.push([state.indDays, state.teamDays]);
+    }
+    update();
+}
+
+function attachSliderHandlers(trackId, metric) {
+    const track = $(trackId);
+    let dragging = false;
+    const computeValue = (clientX) => {
+        const rect = track.getBoundingClientRect();
+        const ratio = (clientX - rect.left) / rect.width;
+        return Math.max(0, Math.min(TOTAL_DAYS, Math.round(ratio * TOTAL_DAYS)));
+    };
+    const applyValue = (newValue) => {
+        if (state.locked) return;
+        if (metric === 'ind') {
+            const capped = Math.max(0, Math.min(TOTAL_DAYS, newValue));
+            if (capped + state.teamDays > TOTAL_DAYS) state.teamDays = TOTAL_DAYS - capped;
+            state.indDays = capped;
+        } else {
+            const capped = Math.max(0, Math.min(TOTAL_DAYS, newValue));
+            if (capped + state.indDays > TOTAL_DAYS) state.indDays = TOTAL_DAYS - capped;
+            state.teamDays = capped;
+        }
+        if (state.indDays + state.teamDays > TOTAL_DAYS) state.indDays = TOTAL_DAYS - state.teamDays;
+        recordMove(metric);
+    };
+    track.addEventListener('pointerdown', e => {
+        if (state.locked) return;
+        dragging = true;
+        track.classList.add('dragging');
+        try { track.setPointerCapture(e.pointerId); } catch(_) {}
+        applyValue(computeValue(e.clientX));
+    });
+    track.addEventListener('pointermove', e => { if (dragging) applyValue(computeValue(e.clientX)); });
+    const endDrag = e => {
+        if (!dragging) return;
+        dragging = false;
+        track.classList.remove('dragging');
+        try { track.releasePointerCapture(e.pointerId); } catch(_) {}
+    };
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
+    track.addEventListener('pointerleave', e => { if (dragging) endDrag(e); });
+}
+
+function refreshSliderVisuals() {
+    const indPct = (state.indDays / TOTAL_DAYS) * 100;
+    $('indTrackFill').style.width = indPct + '%';
+    $('indThumb').style.left = indPct + '%';
+    $('indBadge').style.left = indPct + '%';
+    $('indBadge').innerText = state.indDays + (state.indDays === 1 ? ' day' : ' days');
+    
+    const teamPct = (state.teamDays / TOTAL_DAYS) * 100;
+    $('teamTrackFill').style.width = teamPct + '%';
+    $('teamThumb').style.left = teamPct + '%';
+    $('teamBadge').style.left = teamPct + '%';
+    $('teamBadge').innerText = state.teamDays + (state.teamDays === 1 ? ' day' : ' days');
+}
+
+function updateMovement(elId, diff) {
+    const el = $(elId);
+    el.classList.remove('up', 'down', 'flat');
+    if (diff > 0) { el.classList.add('up'); el.innerText = '▲ +' + diff; }
+    else if (diff < 0) { el.classList.add('down'); el.innerText = '▼ ' + diff; }
+    else { el.classList.add('flat'); el.innerText = '–'; }
+}
+
+function renderLeaderboard(containerId, sorted, baselineRank) {
+    const container = $(containerId);
+    container.innerHTML = '';
+    const header = document.createElement('div');
+    header.className = 'lb-header-row';
+    header.innerHTML = `<span class="lb-rank">Rank</span><span style="width:24px;flex-shrink:0;"></span><span class="lb-name">Name</span><span class="lb-score" style="text-align:right;">Score</span><span style="min-width:30px;"></span>`;
+    container.appendChild(header);
+
+    const userIdx = sorted.findIndex(x => x.isUser);
+    let visibleItems, insertDividerAfter = -1;
+    if (userIdx < 10) { visibleItems = sorted.slice(0, 10); }
+    else { visibleItems = sorted.slice(0, 10); visibleItems.push(sorted[userIdx]); insertDividerAfter = 9; }
+
+    visibleItems.forEach((item, idx) => {
+        const currentRank = sorted.indexOf(item) + 1;
+        const row = document.createElement('div');
+        row.className = 'lb-row' + (item.isUser ? ' user' : '');
+
+        let mv = '<span class="lb-movement flat" style="display:none;">–</span>';
+        if (item.isUser && state.condition === 'A') {
+            const d = baselineRank - currentRank;
+            if (d > 0) mv = `<span class="lb-movement up" style="display:block;">▲ +${d}</span>`;
+            else if (d < 0) mv = `<span class="lb-movement down" style="display:block;">▼ ${d}</span>`;
+            else mv = `<span class="lb-movement flat" style="display:block;">–</span>`;
+        }
+        
+        const initial = item.name.charAt(0).toUpperCase();
+        const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2364748b'/><text x='50' y='50' font-size='45' text-anchor='middle' dominant-baseline='central' fill='white' font-family='sans-serif'>${initial}</text></svg>`;
+        const safeFallback = fallbackSvg.replace(/'/g, "\\'");
+
+        let avatarHtml = item.avatar ? `<img src="${item.avatar}" alt="Avatar" onerror="this.onerror=null; this.src='${safeFallback}';">` : `<img src="${fallbackSvg}" alt="Avatar">`;
+
+        row.innerHTML = `
+            <span class="lb-rank">#${currentRank}</span>
+            <span class="lb-avatar ${item.isUser ? 'user-avatar' : ''}">${avatarHtml}</span>
+            <span class="lb-name">${item.name}</span>
+            <span class="lb-score">${Math.round(item.score)}</span>
+            ${mv}`;
+        container.appendChild(row);
+        if (idx === insertDividerAfter) {
+            const div = document.createElement('div');
+            div.className = 'lb-divider';
+            container.appendChild(div);
+        }
+    });
+}
+
+function renderEffect() {
+    const el = $('expContent');
+    el.innerHTML = '';
+
+    if (state.condition === 'B') {
+        el.innerHTML = `
+            <div class="effect-static">
+                Rank updates and outcome impacts will be calculated after you lock your allocation.
+            </div>
+            <div class="effect-static">
+                Drag the sliders to split your 10 days between Personal Sales Quota and Helping a Team Member.
+            </div>`;
+        return;
+    }
+
+    if (state.condition === 'C') {
+        el.innerHTML = `
+            <div class="effect-static">
+                No rank information is displayed during this task. You will see your final results after locking your allocation.
+            </div>
+            <div class="effect-static">
+                Drag the sliders to split your 10 days between Personal Sales Quota and Helping a Team Member.
+            </div>`;
+        return;
+    }
+
+    const indRank = projectedIndRank(state.indDays);
+    const teamRank = projectedTeamRank(state.teamDays);
+    const indDelta = BASELINE_IND_RANK - indRank;
+    const teamDelta = BASELINE_TEAM_RANK - teamRank;
+
+    const chip = d => d > 0 ? `<span class="delta-chip up">▲ +${d}</span>`
+                    : d < 0 ? `<span class="delta-chip down">▼ ${d}</span>`
+                    : `<span class="delta-chip flat">— no change</span>`;
+
+    const c1 = document.createElement('div');
+    c1.className = 'effect-card';
+    c1.innerHTML = `
+        <div class="effect-card-header">
+            <span class="effect-card-title">💰 Personal Sales Quota</span>
+            <span class="effect-days-badge">${state.indDays} ${state.indDays === 1 ? 'day' : 'days'}</span>
+        </div>
+        <div class="effect-rank-row">
+            <span class="effect-rank-left"><span class="icon">👤</span> Individual Rank</span>
+            <div class="rank-flow-container">
+                <div class="rank-flow">
+                    <span class="rank-from">#${BASELINE_IND_RANK}</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="rank-to">#${indRank}</span>
+                </div>
+                ${chip(indDelta)}
+            </div>
+        </div>`;
+    el.appendChild(c1);
+
+    const c2 = document.createElement('div');
+    c2.className = 'effect-card';
+    c2.innerHTML = `
+        <div class="effect-card-header">
+            <span class="effect-card-title">🤝 Helping a Team Member</span>
+            <span class="effect-days-badge">${state.teamDays} ${state.teamDays === 1 ? 'day' : 'days'}</span>
+        </div>
+        <div class="effect-rank-row">
+            <span class="effect-rank-left"><span class="icon">👥</span> Team Rank</span>
+            <div class="rank-flow-container">
+                <div class="rank-flow">
+                    <span class="rank-from">#${BASELINE_TEAM_RANK}</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="rank-to">#${teamRank}</span>
+                </div>
+                ${chip(teamDelta)}
+            </div>
+        </div>`;
+    el.appendChild(c2);
+}
+
+function update() {
+    if (state.locked) return;
+    refreshSliderVisuals();
+
+    const total = state.indDays + state.teamDays;
+    $('totalUsed').innerText = total;
+    const ac = $('allocCounter');
+    if (total >= TOTAL_DAYS) { ac.classList.remove('incomplete'); ac.classList.add('complete'); }
+    else { ac.classList.remove('complete'); ac.classList.add('incomplete'); }
+
+    if (state.condition === 'A') {
+        $('indMovement').style.display = 'block';
+        $('teamMovement').style.display = 'block';
+        
+        $('indMetricScore').innerText = state.indDays + ' / ' + TOTAL_DAYS + ' days';
+        $('indMetricFill').style.width = (state.indDays / TOTAL_DAYS * 100) + '%';
+        $('teamMetricScore').innerText = state.teamDays + ' / ' + TOTAL_DAYS + ' days';
+        $('teamMetricFill').style.width = (state.teamDays / TOTAL_DAYS * 100) + '%';
+
+        const indAll = computeRank(IND_PEERS, scoreFromDays(state.indDays), false);
+        const teamAll = computeRank(TEAM_PEERS, scoreFromDays(state.teamDays), true);
+        $('indRankVal').innerText = indAll.rank;
+        $('teamRankVal').innerText = teamAll.rank;
+        updateMovement('indMovement', BASELINE_IND_RANK - indAll.rank);
+        updateMovement('teamMovement', BASELINE_TEAM_RANK - teamAll.rank);
+        $('indRankNote').textContent = 'Live projection — updates as you move the sliders';
+        $('teamRankNote').textContent = 'Live projection — updates as you move the sliders';
+        renderLeaderboard('indLeaderboard', indAll.sorted, BASELINE_IND_RANK);
+        renderLeaderboard('teamLeaderboard', teamAll.sorted, BASELINE_TEAM_RANK);
+    } else if (state.condition === 'C') {
+        $('indMovement').style.display = 'none';
+        $('teamMovement').style.display = 'none';
+        
+        $('indMetricScore').innerText = '— / 10 days';
+        $('indMetricFill').style.width = '0%';
+        $('teamMetricScore').innerText = '— / 10 days';
+        $('teamMetricFill').style.width = '0%';
+        
+        $('indRankVal').innerText = '–';
+        $('teamRankVal').innerText = '–';
+        $('indRankOf').innerText = '';
+        $('teamRankOf').innerText = '';
+        $('indRankNote').textContent = '(Rank hidden)';
+        $('teamRankNote').textContent = '(Rank hidden)';
+        
+        $('indLeaderboard').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-size:11px;">Leaderboard hidden in this condition</div>';
+        $('teamLeaderboard').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-size:11px;">Leaderboard hidden in this condition</div>';
+    } else {
+        $('indMovement').style.display = 'none';
+        $('teamMovement').style.display = 'none';
+        
+        $('indMetricScore').innerText = '— / 10 days';
+        $('indMetricFill').style.width = '0%';
+        $('teamMetricScore').innerText = '— / 10 days';
+        $('teamMetricFill').style.width = '0%';
+        
+        $('indRankVal').innerText = BASELINE_IND_RANK;
+        $('teamRankVal').innerText = BASELINE_TEAM_RANK;
+        $('indRankOf').innerText = '/ 120';
+        $('teamRankOf').innerText = '/ 24';
+        $('indRankNote').textContent = '(Calculated upon confirmation)';
+        $('teamRankNote').textContent = '(Calculated upon confirmation)';
+        
+        const indBase = computeRank(IND_PEERS, scoreFromDays(BASELINE_DAYS), false);
+        const teamBase = computeRank(TEAM_PEERS, scoreFromDays(BASELINE_DAYS), true);
+        renderLeaderboard('indLeaderboard', indBase.sorted, BASELINE_IND_RANK);
+        renderLeaderboard('teamLeaderboard', teamBase.sorted, BASELINE_TEAM_RANK);
+    }
+    renderEffect();
+}
+
+window.openConfirmModal = function() {
+    const total = state.indDays + state.teamDays;
+    const remaining = TOTAL_DAYS - total;
+
+    let html = `
+        <div class="row"><span>💰 Personal Sales Quota</span><strong>${state.indDays} ${state.indDays === 1 ? 'day' : 'days'}</strong></div>
+        <div class="row"><span>🤝 Helping a Team Member</span><strong>${state.teamDays} ${state.teamDays === 1 ? 'day' : 'days'}</strong></div>
+        <div class="row" style="border-top:1px dashed rgba(30,126,52,0.2); margin-top:6px; padding-top:6px;">
+            <span>Total Allocated</span><strong>${total} / ${TOTAL_DAYS} days</strong>
+        </div>`;
+
+    if (remaining > 0) {
+        $('modalWarning').style.display = 'block';
+        $('modalWarning').innerHTML = `⚠️ You still have <strong>${remaining} ${remaining === 1 ? 'day' : 'days'}</strong> unallocated.`;
+        $('confirmBtn').innerHTML = `Lock with ${remaining} unused ✓`;
+    } else {
+        $('modalWarning').style.display = 'none';
+        $('confirmBtn').innerHTML = 'OK, Lock It In ✓';
+    }
+
+    $('modalSummary').innerHTML = html;
+    $('confirmModal').classList.add('show');
+};
+
+window.cancelLock = function() { $('confirmModal').classList.remove('show'); };
+
+window.confirmLock = function() {
+    $('confirmModal').classList.remove('show');
+    setTimeout(() => {
+        if (state.locked) return;
+        state.locked = true;
+        state.lockTime = Date.now();
+
+        state.finalIndRank = projectedIndRank(state.indDays);
+        state.finalTeamRank = projectedTeamRank(state.teamDays);
+
+        $('lockBtn').style.display = 'none';
+        $('surveyBtn').style.display = 'block';
+
+        $('indMovement').style.display = 'block';
+        $('teamMovement').style.display = 'block';
+        
+        $('indRankOf').innerText = '/ 120';
+        $('teamRankOf').innerText = '/ 24';
+
+        $('indMetricScore').innerText = state.indDays + ' / ' + TOTAL_DAYS + ' days';
+        $('indMetricFill').style.width = (state.indDays / TOTAL_DAYS * 100) + '%';
+        $('teamMetricScore').innerText = state.teamDays + ' / ' + TOTAL_DAYS + ' days';
+        $('teamMetricFill').style.width = (state.teamDays / TOTAL_DAYS * 100) + '%';
+
+        $('indRankVal').innerText = state.finalIndRank;
+        $('teamRankVal').innerText = state.finalTeamRank;
+        updateMovement('indMovement', BASELINE_IND_RANK - state.finalIndRank);
+        updateMovement('teamMovement', BASELINE_TEAM_RANK - state.finalTeamRank);
+        $('indRankNote').textContent = 'Final result';
+        $('teamRankNote').textContent = 'Final result';
+
+        const indAll = computeRank(IND_PEERS, scoreFromDays(state.indDays), false);
+        const teamAll = computeRank(TEAM_PEERS, scoreFromDays(state.teamDays), true);
+        renderLeaderboard('indLeaderboard', indAll.sorted, BASELINE_IND_RANK);
+        renderLeaderboard('teamLeaderboard', teamAll.sorted, BASELINE_TEAM_RANK);
+        
+        if (state.condition === 'B') {
+            $('expContent').innerHTML = '<div class="effect-static" style="color: #7ae89a; font-weight: 700;">Allocation locked. Final ranks revealed.</div>';
+        } else if (state.condition === 'C') {
+            $('expContent').innerHTML = '<div class="effect-static" style="color: #7ae89a; font-weight: 700;">Allocation locked. Final ranks revealed.</div>';
+        }
+
+        const data = getProcessData();
+        
+        try {
+            const sessions = JSON.parse(localStorage.getItem('effort_all_sessions') || '[]');
+            sessions.push(data);
+            localStorage.setItem('effort_all_sessions', JSON.stringify(sessions));
+        } catch(_) {}
+        
+        console.log('EFFORT_DATA', data);
+    }, 250);
+};
+
+window.goToSurvey = function() {
+    const data = getProcessData();
+    const payload = encodeURIComponent(JSON.stringify(data));
+    const baseUrl = state.condition === 'A' ? SURVEY_A : state.condition === 'C' ? SURVEY_C : SURVEY_B;
+    const finalUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'condition=' + state.condition + '&sid=' + state.sessionId + '&data=' + payload;
+    window.location.href = finalUrl;
+};
+
+function getProcessData() {
+    let hesitationMs = 0;
+    if (state.lastMoveTime && state.lockTime) {
+        hesitationMs = state.lockTime - state.lastMoveTime;
+    }
+
+    return {
+        sessionId: state.sessionId,
+        condition: state.condition,
+        startTime: state.startTime,
+        lockTime: state.lockTime,
+        durationMs: state.lockTime ? state.lockTime - state.startTime : null,
+        sliderMovesCount: state.sliderMoves,
+        directionSwitches: state.directionSwitches,
+        exploredConfigurations: state.exploredConfigs,
+        timeToFirstMove: state.firstMoveTime ? state.firstMoveTime - state.startTime : null,
+        hesitationMs: hesitationMs,
+        finalAllocation: { personalDays: state.indDays, helpingDays: state.teamDays },
+        finalRanks: { individual: state.finalIndRank, team: state.finalTeamRank },
+        userProfile: { name: state.userProfile.name, hasCustomAvatar: state.userProfile.avatarUrl.startsWith('data:') },
+        mouseLog: state.mouseLog
+    };
+}
+
+function startSim() {
+    if (LOCKED_COND) $('navTabs').classList.add('hidden');
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.cond === state.condition));
+    
+    if (state.condition === 'A') $('lbTitle').textContent = '🏆 Live Leaderboard Projection';
+    else if (state.condition === 'C') $('lbTitle').textContent = '🏆 Leaderboard Projection (Hidden)';
+    else $('lbTitle').textContent = '🏆 Leaderboard Projection';
+    
+    attachSliderHandlers('indSliderTrack', 'ind');
+    attachSliderHandlers('teamSliderTrack', 'team');
+    update();
+}
+</script>
+</body>
+</html>
