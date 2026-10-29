@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quarterly Effort Planner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#d9ece0;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px;user-select:none}
+.app{max-width:1500px;width:100%;background:#fff;border-radius:32px;box-shadow:0 24px 60px rgba(20,90,42,.15);overflow:hidden}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 26px;border-bottom:1px solid rgba(30,126,52,.12);flex-wrap:wrap;gap:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#1e7e34,#34a853);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo h1{font-size:17px;font-weight:800;color:#145a2a}
+.badge-period{background:#eef6f0;color:#145a2a;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;border:1px solid #cfe6d6}
+.badge-cell{background:#0f172a;color:#38bdf8;font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;margin-left:8px;font-family:monospace}
+.nav-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:12px 26px 0;border-bottom:1px solid rgba(30,126,52,.08)}
+.nav-tab{padding:9px 14px;background:transparent;border:none;border-bottom:2.5px solid transparent;font-family:inherit;font-size:12px;font-weight:700;color:#6f8aa8;cursor:pointer;border-radius:8px 8px 0 0;margin-bottom:-1px}
+.nav-tab:hover{color:#145a2a;background:#f4fbf6}
+.nav-tab.active{color:#145a2a;border-bottom-color:#1e7e34;background:#f4fbf6}
+main{display:grid;grid-template-columns:.85fr 1.2fr .95fr;gap:18px;padding:20px 26px 22px;min-height:600px}
+@media (max-width:1200px){main{grid-template-columns:1fr}}
+.performance,.leaderboards,.control{background:linear-gradient(165deg,#0a3d33 0%,#155a4a 100%);color:#fff;border-radius:20px;padding:18px;border:1px solid rgba(122,232,210,.15);box-shadow:0 8px 24px rgba(10,61,51,.28);display:flex;flex-direction:column;gap:12px}
+.panel-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px}
+.panel-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,rgba(255,255,255,.28),transparent)}
+.card{background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;border:1px solid rgba(255,255,255,.12);font-size:11px;line-height:1.6;color:rgba(255,255,255,.92)}
+.card h5{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:#fff}
+.rank-card{border-left:4px solid #7ae89a}
+.rank-row{display:flex;align-items:baseline;gap:6px}
+.rank-value{font-size:26px;font-weight:900}
+.rank-of{font-size:12px;font-weight:600;color:rgba(255,255,255,.8)}
+.muted{font-size:10px;font-style:italic;color:rgba(255,255,255,.7)}
+.plan-row{display:flex;justify-content:space-between;font-family:'SF Mono','Courier New',monospace;font-size:11px;padding:2px 0}
+.lb-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lb-grid.single{grid-template-columns:1fr}
+.lb-card{background:rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.12)}
+.lb-card h4{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.15);line-height:1.4}
+.lb-card h4 small{font-weight:600;text-transform:none;letter-spacing:0;color:rgba(255,255,255,.75)}
+.lb-card.proj{border:1.5px dashed rgba(255,217,102,.7)}
+.lb-row{display:flex;align-items:center;padding:3px 4px;border-radius:6px;font-size:10.5px;gap:6px}
+.lb-row.user{background:rgba(255,217,102,.28);border-left:3px solid #ffd966}
+.lb-rank{font-weight:700;color:rgba(255,255,255,.85);min-width:24px;font-size:10px}
+.lb-avatar{width:20px;height:20px;border-radius:50%;background:#e2e8f0;overflow:hidden;flex-shrink:0}
+.lb-avatar img{width:100%;height:100%;object-fit:cover}
+.lb-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-score{font-weight:700;min-width:26px;text-align:right;font-family:'SF Mono','Courier New',monospace}
+.lb-footnote{margin-top:auto;padding:10px 13px;background:rgba(255,255,255,.08);border-radius:12px;border:1px solid rgba(255,255,255,.12);font-size:10.5px;line-height:1.7}
+.phase-bar{border-radius:10px;padding:9px 12px;font-size:11px;font-weight:700;background:rgba(255,217,102,.15);border:1px solid rgba(255,217,102,.45);line-height:1.5}
+.alloc-counter{border-radius:12px;padding:10px 14px}
+.alloc-counter.incomplete{background:rgba(232,93,74,.22);border:1.5px solid rgba(232,93,74,.55)}
+.alloc-counter.complete{background:rgba(122,232,154,.18);border:1.5px solid rgba(122,232,154,.55)}
+.alloc-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
+.alloc-value{font-size:22px;font-weight:900;color:#b3ffd1}
+.alloc-counter.incomplete .alloc-value{color:#ffc2ad}
+.cap-hint{font-size:10px;color:#ffc2ad;min-height:13px;margin-top:2px}
+.slider-group{background:rgba(255,255,255,.08);border-radius:12px;padding:10px 13px;border:1px solid rgba(255,255,255,.12)}
+.slider-group-label{font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.label-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.28);font-size:12px;flex-shrink:0}
+.slider-row{display:flex;align-items:center;gap:10px;position:relative;padding-top:28px}
+.slider-end-label{font-size:10.5px;font-weight:700;font-family:'SF Mono','Courier New',monospace;min-width:16px}
+.slider-track-wrap{position:relative;flex:1;height:24px;cursor:pointer;touch-action:none}
+.slider-track-wrap.disabled{cursor:not-allowed;opacity:.6}
+.slider-track-bg{position:absolute;top:50%;transform:translateY(-50%);left:0;right:0;height:8px;background:rgba(255,255,255,.2);border-radius:10px}
+.slider-track-fill{height:100%;background:linear-gradient(90deg,#7ae89a,#34a853);border-radius:10px}
+.slider-thumb{position:absolute;top:50%;left:0;width:22px;height:22px;background:#fff;border:3px solid #1e7e34;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+.slider-badge{position:absolute;bottom:calc(100% + 4px);left:0;transform:translateX(-50%);background:#fff;color:#0a3d1f;font-size:11px;font-weight:900;padding:2px 9px;border-radius:8px;font-family:'SF Mono','Courier New',monospace;border:2px solid #7ae89a;white-space:nowrap}
+.ff-box{background:rgba(255,255,255,.06);border:1.5px dashed rgba(255,217,102,.8);border-radius:12px;padding:12px 14px}
+.ff-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#ffd966;margin-bottom:6px}
+.ff-rank{display:flex;align-items:baseline;gap:8px;margin:2px 0 6px}
+.ff-rank .big{font-size:30px;font-weight:900}
+.delta-chip{font-family:'SF Mono',monospace;font-size:10px;font-weight:900;padding:3px 8px;border-radius:6px;margin-left:auto;align-self:center}
+.delta-chip.up{background:rgba(122,232,154,.25);color:#b3ffd1}
+.delta-chip.down{background:rgba(232,93,74,.25);color:#ffb9a5}
+.delta-chip.flat{background:rgba(255,255,255,.1);color:rgba(255,255,255,.75)}
+.ff-note{font-size:10.5px;font-style:italic;color:rgba(255,255,255,.8);line-height:1.5}
+.btn-stack{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.lock-btn{background:#7ae89a;color:#0a3d1f;border:none;border-radius:30px;padding:12px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+.lock-btn:disabled{opacity:.45;cursor:not-allowed}
+.lock-btn.survey{background:#ffd966}
+.hidden{display:none !important}
+footer{padding:12px 26px;background:#f8fbf9;border-top:1px solid rgba(30,126,52,.08);font-size:10.5px;color:#6f8aa8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.modal-overlay{position:fixed;inset:0;background:rgba(10,30,18,.75);backdrop-filter:blur(8px);display:flex;justify-content:center;align-items:center;z-index:1000;opacity:0;visibility:hidden}
+.modal-overlay.show{opacity:1;visibility:visible}
+.modal-card{background:#fff;border-radius:22px;padding:26px 30px;max-width:560px;width:95%;border:2px solid #1e7e34;max-height:90vh;overflow-y:auto;user-select:text}
+.modal-card.wide{max-width:760px}
+.modal-card h3{font-size:18px;font-weight:800;color:#145a2a;margin-bottom:10px}
+.modal-body{font-size:13px;color:#3d5775;line-height:1.6}
+.modal-summary{background:#f4fbf6;border-radius:12px;padding:12px 16px;margin:12px 0;border:1px solid #e8f4ec}
+.modal-summary .row{display:flex;justify-content:space-between;padding:3px 0}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.modal-btn{padding:11px 22px;border-radius:30px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit}
+.modal-btn:disabled{opacity:.45;cursor:not-allowed}
+.modal-btn-cancel{background:#f0f4fa;color:#3d5775;border:1.5px solid #cddae9}
+.modal-btn-confirm{background:linear-gradient(135deg,#1e7e34,#34a853);color:#fff}
+.likert-item{padding:10px 0;border-bottom:1px solid #eef2f6}
+.likert-text{font-size:13px;color:#1f3b2b;margin-bottom:6px}
+.likert-scale{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.likert-scale label{display:flex;flex-direction:column;align-items:center;font-size:11px;color:#3d5775;cursor:pointer;padding:4px;border-radius:8px;border:1px solid #dbe6ef}
+.likert-anchors{display:flex;justify-content:space-between;font-size:10px;color:#6f8aa8;margin-top:2px}
+.profile-setup{display:flex;gap:20px;align-items:flex-start}
+@media (max-width:520px){.profile-setup{flex-direction:column;align-items:center}}
+.avatar-preview{width:80px;height:80px;border-radius:50%;background:#e2e8f0;border:3px solid #1e7e34;overflow:hidden;margin:0 auto}
+.avatar-preview img{width:100%;height:100%;object-fit:cover}
+.avatar-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:8px;max-width:130px}
+.avatar-btn{padding:5px 8px;border-radius:20px;border:1px solid #cddae9;background:#f8fafc;font-size:10px;font-weight:700;color:#3d5775;cursor:pointer;font-family:inherit}
+.name-inputs{flex:1}
+.name-inputs label{font-size:11px;font-weight:800;text-transform:uppercase;color:#5a8a6a;margin-bottom:6px;display:block}
+.name-inputs input{width:100%;padding:9px;border-radius:8px;border:1px solid #cddae9;font-family:inherit;font-size:13px;margin-bottom:10px}
+#adminDashboard{display:none;position:fixed;inset:0;background:#0f172a;color:#f8fafc;z-index:9999;padding:40px;overflow-y:auto}
+#adminDashboard.show{display:block}
+.admin-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin-top:20px}
+.admin-card{background:#1e293b;border-radius:12px;padding:20px;border:1px solid #334155}
+.admin-card h3{font-size:13px;color:#94a3b8;text-transform:uppercase;margin-bottom:12px}
+.admin-table{width:100%;border-collapse:collapse;font-size:12px}
+.admin-table th,.admin-table td{padding:8px;text-align:left;border-bottom:1px solid #334155}
+.admin-input{width:100%;padding:10px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-family:monospace;margin-bottom:10px}
+#invalidScreen{display:none;padding:60px;text-align:center;color:#145a2a;font-weight:700;background:#fff;border-radius:24px;line-height:1.8}
+</style>
+</head>
+<body>
+
+<!-- ============ RESEARCHER DASHBOARD (local test data only) ============ -->
+<div id="adminDashboard">
+  <h1 style="font-size:22px;color:#38bdf8;">🔬 Research dashboard (sessions saved in this browser only)</h1>
+  <div class="admin-grid">
+    <div class="admin-card"><h3>Local sessions</h3><div id="adminTable"></div></div>
+    <div class="admin-card"><h3>Inspect a Qualtrics "data" value</h3>
+      <textarea id="adminJson" class="admin-input" rows="7" placeholder='{"sid":"...","cell":"live_team",...}'></textarea>
+      <button onclick="analyzeJson()" style="padding:10px 20px;background:#38bdf8;border:none;border-radius:8px;font-weight:800;cursor:pointer;">Analyze</button>
+      <div id="adminResult" style="margin-top:16px;font-size:12px;line-height:1.8;word-break:break-all;"></div>
+    </div>
+  </div>
+</div>
+
+<div id="invalidScreen">This study link is incomplete. Please go back to the survey and use the link provided there.<br>
+<small style="font-weight:500;color:#6f8aa8;">(Researchers: add <code>?preview=1</code> to the URL to preview all six conditions.)</small></div>
+
+<!-- ============ PROFILE SETUP ============ -->
+<div class="modal-overlay" id="setupModal">
+  <div class="modal-card">
+    <h3>👥 Set up your profile</h3>
+    <div class="modal-body">
+      <div class="profile-setup">
+        <div>
+          <div class="avatar-preview"><img id="userAvatarImg" alt="Avatar"></div>
+          <div class="avatar-actions">
+            <button class="avatar-btn" onclick="randomizeAvatar('human')">👨 Human</button>
+            <button class="avatar-btn" onclick="randomizeAvatar('animal')">🐶 Animal</button>
+            <button class="avatar-btn" onclick="randomizeAvatar('robot')">🤖 Robot</button>
+            <button class="avatar-btn" onclick="document.getElementById('avatarUpload').click()">📷 Upload</button>
+            <input type="file" id="avatarUpload" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+          </div>
+        </div>
+        <div class="name-inputs">
+          <label>Your name</label>
+          <input type="text" id="userName" value="You" maxlength="24">
+          <label>A teammate you sometimes help</label>
+          <input type="text" id="teammateName" placeholder="e.g., Alex M." maxlength="24">
+          <label>Up to 4 other colleagues from your territory</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <input type="text" id="name1" placeholder="Colleague 1" maxlength="24">
+            <input type="text" id="name2" placeholder="Colleague 2" maxlength="24">
+            <input type="text" id="name3" placeholder="Colleague 3" maxlength="24">
+            <input type="text" id="name4" placeholder="Colleague 4" maxlength="24">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="skipNames()">Use defaults</button>
+      <button class="modal-btn modal-btn-confirm" onclick="saveSetup()">Start →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div class="app" id="app">
+  <header>
+    <div class="logo"><div class="logo-icon">📊</div><h1>Quarterly Effort Planner</h1></div>
+    <div><span class="badge-period">Q3 · Week 6 of 12 · Plan your next 10 working days</span><span class="badge-cell hidden" id="cellBadge"></span></div>
+  </header>
+  <div class="nav-tabs hidden" id="navTabs"></div>
+
+  <main>
+    <!-- LEFT: identical in all 6 cells except board label/rules -->
+    <section class="performance">
+      <div class="panel-title">📈 Your standing</div>
+      <div class="card rank-card">
+        <h5 id="standingHead">Leaderboard</h5>
+        <div class="rank-row"><span class="rank-value">#<span id="qtdRank">–</span></span><span class="rank-of">/ <span id="qtdN">–</span></span></div>
+        <div class="muted">Quarter-to-date (weeks 1–6)</div>
+      </div>
+      <div class="card"><h5>🗂️ Company plan for the next 10 days</h5><div id="planBox"></div>
+        <div class="muted" style="margin-top:4px">Recommended by your sales manager.</div></div>
+      <div class="card"><h5>📐 How days count on this leaderboard</h5><div id="rulesBox"></div></div>
+      <div class="card"><h5>💵 Your pay</h5><div id="payBox"></div></div>
+    </section>
+
+    <!-- MIDDLE: one board (moderator); projected board only in FF cells (IV) -->
+    <section class="leaderboards">
+      <div class="panel-title" id="lbTitle">🏆 Leaderboard</div>
+      <div class="lb-grid" id="lbGrid">
+        <div class="lb-card"><h4 id="qtdHead"></h4><div id="qtdBoard"></div></div>
+        <div class="lb-card proj" id="projCard"><h4 id="projHead"></h4><div id="projBoard"></div></div>
+      </div>
+      <div class="lb-footnote" id="lbFootnote"></div>
+    </section>
+
+    <!-- RIGHT: allocation + feedforward widget -->
+    <section class="control">
+      <div class="panel-title">🕹️ Plan your next 10 days</div>
+      <div class="phase-bar" id="phaseBar"></div>
+      <div class="alloc-counter complete" id="allocCounter">
+        <div class="alloc-label">Allocated</div>
+        <div class="alloc-value"><span id="totalUsed">10</span> / 10 days</div>
+        <div class="cap-hint" id="capHint"></div>
+      </div>
+      <div id="sliders" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="ff-box"><div class="ff-title" id="ffTitle"></div><div id="ffContent"></div></div>
+      <div class="btn-stack">
+        <button class="lock-btn" id="continueBtn" onclick="openAppraisal()" disabled>Continue</button>
+        <button class="lock-btn hidden" id="lockBtn" onclick="openConfirm()">🔒 Lock final allocation</button>
+        <button class="lock-btn survey hidden" id="surveyBtn" onclick="goToSurvey()">✅ Continue to the survey →</button>
+      </div>
+    </section>
+  </main>
+  <footer><span>Drag the sliders · All 10 days must be allocated</span><span>📊 Interactions are logged confidentially for research.</span></footer>
+</div>
+
+<!-- ============ IN-TASK APPRAISAL CHECK (M measured before final Y) ============ -->
+<div class="modal-overlay" id="appraisalModal">
+  <div class="modal-card wide">
+    <h3>📝 Quick check-in</h3>
+    <div class="modal-body">
+      <p style="margin-bottom:8px">Before you make your final decision, please tell us how you see <b>this quarter's leaderboard situation</b> right now.</p>
+      <div id="appraisalItems"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-confirm" id="appraisalSubmit" onclick="submitAppraisal()" disabled>Continue to final decision →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM ============ -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-card">
+    <h3>🔒 Confirm your final allocation</h3>
+    <div class="modal-body">You are about to lock in your plan for the next 10 days. You cannot change it afterwards.
+      <div class="modal-summary" id="modalSummary"></div></div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('confirmModal').classList.remove('show')">← Revise</button>
+      <button class="modal-btn modal-btn-confirm" onclick="confirmLock()">Lock it in ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   1. CONFIGURATION — edit here
+   ═══════════════════════════════════════════════════════════════ */
+const CFG = {
+  TOTAL_DAYS: 10,
+  PLAN: { sell: 6, help: 2, prospect: 2 },        // firm-preferred allocation (Y1 reference)
+  QTD_USER_SCORE: 37,                              // quarter-to-date score -> rank #10 of 20
+  MIN_EXPLORE_MS: 30000,                           // equal minimum exposure in all cells
+  APPRAISAL_IN_SIM: true,                          // false = measure M in Qualtrics instead
+  SURVEY_URL: 'https://cityu.qualtrics.com/jfe/form/SV_REPLACE_ME',  // ONE survey for all cells
+  LOG_ENDPOINT: null,                              // optional URL to POST the full event log
+  ADMIN_PASSWORD: 'change-me'                      // client-side only: NOT real security
+};
+
+/* Same scripted peers on BOTH boards → identical standing across moderator levels.
+   Entity i has quarter-to-date score QTD[i] and projected end-of-quarter score PROJ[i]. */
+const PROJ_PEERS = [96,93,91,88,86,83,81,78,76,73,71,68,65,61,57,52,47,42,36];
+const QTD_PEERS  = [48,47,45,44,43,42,40,39,38,36,35,33,31,29,26,24,21,18,15];
+
+/* Score rules, calibrated: plan (6/2/2) → 70 → projected #12 on both boards; best reachable #4 on both. */
+const SCORE = {
+  ind:  a => 40 + 5 * a.sell,                    // own sales only
+  team: a => 50 + 2 * a.sell + 4 * a.help        // team sales; helping a teammate counts double
+};
+
+/* ⚠ REPLACE item wording with the exact Searle & Auton (2015) items (4 challenge, 4 hindrance),
+   framed to "this quarter's leaderboard situation". Texts below are adapted placeholders for piloting. */
+const APPRAISAL_ITEMS = [
+  {id:'CH1', text:'This leaderboard situation is an opportunity for me to do well.'},
+  {id:'CH2', text:'Dealing with this leaderboard situation will help me grow.'},
+  {id:'CH3', text:'This leaderboard situation pushes me to achieve something worthwhile.'},
+  {id:'CH4', text:'This leaderboard situation challenges me in a positive way.'},
+  {id:'HI1', text:'This leaderboard situation gets in the way of what I want to achieve.'},
+  {id:'HI2', text:'This leaderboard situation holds me back from doing my job well.'},
+  {id:'HI3', text:'This leaderboard situation is an obstacle I have to deal with.'},
+  {id:'HI4', text:'This leaderboard situation keeps me from reaching my goals.'},
+  {id:'CP1', text:'I can influence where I end up on this leaderboard.'},
+  {id:'CP2', text:'I know what I can do to deal with this leaderboard situation.'}
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   2. CONDITION ASSIGNMENT  (?ff=none|static|live&board=ind|team)
+   ═══════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P = new URLSearchParams(location.search);
+const PREVIEW = P.get('preview') === '1';
+const FF_LEVELS = ['none','static','live'], BOARD_LEVELS = ['ind','team'];
+const ffP = (P.get('ff')||'').toLowerCase(), boardP = (P.get('board')||'').toLowerCase();
+const VALID = FF_LEVELS.includes(ffP) && BOARD_LEVELS.includes(boardP);
+const COND = { ff: VALID ? ffP : 'live', board: VALID ? boardP : 'team' };
+COND.cell = `${COND.ff}_${COND.board}`;
+const KEYS = ['sell','help','prospect'];
+let PLAN_RANK = null;
+
+/* ═══════════════════════════════════════════════════════════════
+   3. STATE
+   ═══════════════════════════════════════════════════════════════ */
+const state = {
+  sid: 'S_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7).toUpperCase(),
+  pid: P.get('pid') || P.get('PROLIFIC_PID') || null,
+  alloc: { ...CFG.PLAN },
+  phase: 'setup',                      // setup | explore | appraise | decide | locked
+  t0:null, tAppraisal:null, tLock:null, firstMove:null, lastMove:null,
+  moves:{ explore:0, decide:0 }, reversals:0, lastDir:{ sell:0, help:0, prospect:0 },
+  explored:new Set(), exploredSeq:[], projSeen:new Set(),
+  allocAtAppraisal:null, appraisal:{}, appraisalOrder:[], events:[],
+  profile:{ name:'You', avatar:'', teammate:'Alex M.', customNames:0 }
+};
+const totalDays = () => KEYS.reduce((s,k)=>s+state.alloc[k],0);
+const allocKey = a => `${a.sell}-${a.help}-${a.prospect}`;
+
+/* ═══════════════════════════════════════════════════════════════
+   4. AVATARS & ENTITIES
+   ═══════════════════════════════════════════════════════════════ */
+const humanAv = s => `https://api.dicebear.com/7.x/micah/svg?seed=${encodeURIComponent(s)}&backgroundColor=f1f5f9,e2e8f0`;
+const robotAv = s => `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(s)}&backgroundColor=f1f5f9,e2e8f0`;
+function animalAv(seed){
+  const animals=['🐶','🐱','🦊','🐼','🐸','🐧','🦁','🐯','🐮','🐷','🐵','🦄']; let h=0;
+  for (let i=0;i<seed.length;i++) h=seed.charCodeAt(i)+((h<<5)-h);
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23e2e8f0"/><text x="50" y="50" font-size="60" text-anchor="middle" dominant-baseline="central">${animals[Math.abs(h)%animals.length]}</text></svg>`;
+}
+const avatar = (seed,type='human') => type==='animal'?animalAv(seed):type==='robot'?robotAv(seed):humanAv(seed);
+window.randomizeAvatar = t => { $('userAvatarImg').src = avatar(Math.random().toString(36).slice(2), t); };
+window.handleImageUpload = function(input){
+  if (!input.files || !input.files[0]) return;
+  const r = new FileReader();
+  r.onload = e => { const img = new Image(); img.onload = () => {
+    const c=document.createElement('canvas'), x=c.getContext('2d'), m=Math.min(img.width,img.height);
+    c.width=c.height=128; x.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,128,128);
+    $('userAvatarImg').src=c.toDataURL('image/jpeg'); }; img.src=e.target.result; };
+  r.readAsDataURL(input.files[0]);
+};
+
+const FIRST_M=['James','John','Robert','Michael','William','David','Richard','Joseph','Thomas','Charles','Daniel','Matthew'];
+const FIRST_F=['Mary','Patricia','Jennifer','Linda','Elizabeth','Barbara','Susan','Jessica','Sarah','Karen','Lisa','Nancy'];
+const LAST=['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez'];
+const TEAM_NAMES=['Alfa','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta','Iota','Kappa','Lambda','Mu','Nu','Xi','Omicron','Pi','Rho','Tau','Upsilon'];
+const usedNames = new Set();
+function randomName(){
+  let n; do { const pool=Math.random()>.5?FIRST_M:FIRST_F;
+    n=`${pool[Math.floor(Math.random()*pool.length)]} ${LAST[Math.floor(Math.random()*LAST.length)][0]}.`;
+  } while (usedNames.has(n)); usedNames.add(n); return n;
+}
+let IND_PEOPLE=[], TEAMS=[];
+function buildEntities(){
+  IND_PEOPLE = PROJ_PEERS.map((s,i)=>{ const n=randomName();
+    return { name:n, proj:s, qtd:QTD_PEERS[i], avatar:avatar(n, i%7===3?'robot':i%9===5?'animal':'human') }; });
+  TEAMS = PROJ_PEERS.map((s,i)=>({ name:`Team ${TEAM_NAMES[i]}`, proj:s, qtd:QTD_PEERS[i],
+    avatar:`https://api.dicebear.com/7.x/shapes/svg?seed=${TEAM_NAMES[i]}&backgroundColor=c0aede,d1d4f9,b6e3f4` }));
+}
+/* Colleague names placed at the SAME positions on both boards (equal social-comparison cues). */
+function placeColleagues(names){
+  const idx=[]; while (idx.length<names.length){ const k=Math.floor(Math.random()*PROJ_PEERS.length); if(!idx.includes(k)) idx.push(k); }
+  idx.forEach((k,i)=>{ IND_PEOPLE[k].name=names[i]; IND_PEOPLE[k].avatar=avatar(names[i],'human'); TEAMS[k].name=`${names[i]}'s team`; });
+}
+const userLabel = b => b==='ind' ? `${state.profile.name} (you)` : `Team Sigma — your team (with ${state.profile.teammate})`;
+const userAvatar = b => b==='ind' ? state.profile.avatar : 'https://api.dicebear.com/7.x/shapes/svg?seed=Sigma&backgroundColor=c0aede,d1d4f9,b6e3f4';
+
+/* ═══════════════════════════════════════════════════════════════
+   5. RANKING
+   ═══════════════════════════════════════════════════════════════ */
+function standings(board, kind, userScore){
+  const ents = board==='ind' ? IND_PEOPLE : TEAMS;
+  const all = ents.map(e=>({ name:e.name, avatar:e.avatar, score:e[kind] }));
+  all.push({ name:userLabel(board), avatar:userAvatar(board), score:userScore, isUser:true });
+  all.sort((a,b)=> (b.score-a.score) || (a.isUser?-1:b.isUser?1:0));
+  return { rank: all.findIndex(x=>x.isUser)+1, sorted: all };
+}
+const projStandings = (a=state.alloc) => standings(COND.board,'proj',SCORE[COND.board](a));
+const qtdStandings  = () => standings(COND.board,'qtd',CFG.QTD_USER_SCORE);
+function tradeoffKey(){   // true answers for the trade-off-knowledge items (places gained)
+  const shift = to => { const a={...CFG.PLAN}; a.prospect--; a[to]++; return PLAN_RANK - projStandings(a).rank; };
+  return { tk_sell: shift('sell'), tk_help: shift('help') };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   6. RENDERING
+   ═══════════════════════════════════════════════════════════════ */
+function renderBoard(id, sorted){
+  const el=$(id);
+  el.innerHTML = sorted.map((it,i)=>{
+    const fb=`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2364748b'/></svg>`;
+    return `<div class="lb-row${it.isUser?' user':''}"><span class="lb-rank">#${i+1}</span>
+      <span class="lb-avatar"><img src="${esc(it.avatar||fb)}" onerror="this.onerror=null;this.src='${fb}'"></span>
+      <span class="lb-name">${esc(it.name)}</span><span class="lb-score">${Math.round(it.score)}</span></div>`;
+  }).join('');
+}
+
+const BUCKETS = [
+  { key:'sell',     icon:'💰', label:()=> 'Selling to my own accounts (personal quota)' },
+  { key:'help',     icon:'🤝', label:()=> `Helping ${esc(state.profile.teammate)} close deals` },
+  { key:'prospect', icon:'🔭', label:()=> 'Prospecting for next quarter (not ranked)' }
+];
+
+function renderStaticUI(){
+  const isInd = COND.board==='ind', unit = isInd ? 'salespeople' : 'teams';
+  const q = qtdStandings(), N = q.sorted.length, tm = esc(state.profile.teammate), p = CFG.PLAN;
+  $('standingHead').textContent = isInd ? '👤 Individual sales leaderboard' : '👥 Team sales leaderboard';
+  $('qtdRank').textContent = q.rank; $('qtdN').textContent = N;
+  $('planBox').innerHTML = `<div class="plan-row"><span>💰 Selling</span><b>${p.sell} days</b></div>
+    <div class="plan-row"><span>🤝 Helping ${tm}</span><b>${p.help} days</b></div>
+    <div class="plan-row"><span>🔭 Prospecting</span><b>${p.prospect} days</b></div>`;
+  $('rulesBox').innerHTML = isInd
+    ? `Ranks ${N} ${unit} on <b>your own closed sales</b>.<br>• Each selling day: <b>+5 points</b><br>• Helping ${tm}: <b>+0</b> to your score<br>• Prospecting: <b>+0</b> this quarter`
+    : `Ranks ${N} ${unit} on <b>your team's total closed sales</b>.<br>• Each of your selling days: <b>+2 points</b><br>• Each day helping ${tm}: <b>+4 points</b> (your help saves deals they would otherwise lose)<br>• Prospecting: <b>+0</b> this quarter`;
+  $('payBox').innerHTML = `The same for everyone: a personal-quota bonus (the company plan meets your quota) plus a team bonus. <b>Your leaderboard rank does not change your pay.</b>`;
+  $('lbTitle').textContent = isInd ? '🏆 Individual sales leaderboard' : '🏆 Team sales leaderboard';
+  $('qtdHead').innerHTML = `Quarter-to-date standings<br><small>Weeks 1–6 · actual results</small>`;
+  renderBoard('qtdBoard', q.sorted);
+
+  let foot = `📌 Scores are closed-sales points. The ranking compares you with ${N-1} other ${unit} in your region. Final standings are calculated at the end of the quarter.`;
+  if (COND.ff==='none'){ $('projCard').classList.add('hidden'); $('lbGrid').classList.add('single'); }
+  else if (COND.ff==='static'){
+    $('projHead').innerHTML = `Projected end of quarter<br><small>Based on the company plan · calculated once · does not update</small>`;
+    renderBoard('projBoard', projStandings(CFG.PLAN).sorted);
+    foot += `<br>🔮 The projection assumes others keep their current pace and you follow the company plan.`;
+  } else {
+    $('projHead').innerHTML = `Projected end of quarter<br><small>Based on your current allocation · updates as you move the sliders</small>`;
+    foot += `<br>🔮 The projection assumes others keep their current pace and uses your current allocation.`;
+  }
+  $('lbFootnote').innerHTML = foot;
+}
+
+function renderFF(){
+  const a = state.alloc, N = PROJ_PEERS.length + 1, p = CFG.PLAN;
+  if (COND.ff==='none'){
+    $('ffTitle').textContent = '📋 Your allocation';
+    $('ffContent').innerHTML = `<div class="ff-note" style="font-style:normal">${a.sell} selling · ${a.help} helping · ${a.prospect} prospecting days</div>
+      <div class="ff-note">Final standings are calculated at the end of the quarter.</div>`;
+  } else if (COND.ff==='static'){
+    $('ffTitle').textContent = '🔮 Projected end-of-quarter rank';
+    $('ffContent').innerHTML = `<div class="ff-rank"><span class="big">#${PLAN_RANK}</span><span class="rank-of">/ ${N}</span></div>
+      <div class="ff-note">Based on the company plan (${p.sell} / ${p.help} / ${p.prospect}). Calculated once at the start of planning. It does not change when you move the sliders.</div>`;
+  } else {
+    const r = projStandings().rank, d = PLAN_RANK - r;
+    const chip = d>0 ? `<span class="delta-chip up">▲ ${d} vs. plan</span>` : d<0 ? `<span class="delta-chip down">▼ ${-d} vs. plan</span>` : `<span class="delta-chip flat">same as plan</span>`;
+    $('ffTitle').textContent = '🔮 Projected end-of-quarter rank';
+    $('ffContent').innerHTML = `<div class="ff-rank"><span class="big">#${r}</span><span class="rank-of">/ ${N}</span>${chip}</div>
+      <div class="ff-note">Based on your current allocation. Recalculates every time you move a slider.</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7. SLIDERS (capped: you cannot exceed 10 days; no hidden auto-adjustment)
+   ═══════════════════════════════════════════════════════════════ */
+const slidersActive = () => state.phase==='explore' || state.phase==='decide';
+function buildSliders(){
+  $('sliders').innerHTML = BUCKETS.map(b=>`
+    <div class="slider-group">
+      <span class="slider-group-label"><span class="label-icon">${b.icon}</span>${b.label()}</span>
+      <div class="slider-row"><span class="slider-end-label">0</span>
+        <div class="slider-track-wrap" id="trk_${b.key}">
+          <div class="slider-badge" id="bdg_${b.key}"></div>
+          <div class="slider-track-bg"><div class="slider-track-fill" id="fil_${b.key}"></div><div class="slider-thumb" id="thm_${b.key}"></div></div>
+        </div><span class="slider-end-label">10</span></div>
+    </div>`).join('');
+  KEYS.forEach(attachSlider);
+}
+function attachSlider(key){
+  const track=$('trk_'+key); let dragging=false;
+  const val = x => { const r=track.getBoundingClientRect(); return Math.max(0,Math.min(CFG.TOTAL_DAYS,Math.round((x-r.left)/r.width*CFG.TOTAL_DAYS))); };
+  const apply = v => {
+    if (!slidersActive()) return;
+    const max = CFG.TOTAL_DAYS - (totalDays() - state.alloc[key]);
+    const c = Math.min(v, max);
+    if (v > max) $('capHint').textContent = `All ${CFG.TOTAL_DAYS} days are used. Reduce another activity first.`;
+    if (c === state.alloc[key]) return;
+    if (v <= max) $('capHint').textContent = '';
+    const dir = Math.sign(c - state.alloc[key]);
+    if (state.lastDir[key] && dir !== state.lastDir[key]) state.reversals++;
+    state.lastDir[key] = dir; state.alloc[key] = c; recordMove();
+  };
+  track.addEventListener('pointerdown', e=>{ if(!slidersActive()) return; dragging=true; try{track.setPointerCapture(e.pointerId);}catch(_){} apply(val(e.clientX)); });
+  track.addEventListener('pointermove', e=>{ if(dragging) apply(val(e.clientX)); });
+  const end = e=>{ if(!dragging) return; dragging=false; try{track.releasePointerCapture(e.pointerId);}catch(_){} };
+  track.addEventListener('pointerup', end); track.addEventListener('pointercancel', end);
+}
+function refreshSliders(){
+  KEYS.forEach(k=>{ const v=state.alloc[k], pct=v/CFG.TOTAL_DAYS*100;
+    $('fil_'+k).style.width=pct+'%'; $('thm_'+k).style.left=pct+'%'; $('bdg_'+k).style.left=pct+'%';
+    $('bdg_'+k).textContent = v + (v===1?' day':' days'); });
+}
+function recordMove(){
+  const now=Date.now(), a=state.alloc;
+  if (!state.firstMove) state.firstMove=now;
+  state.lastMove=now;
+  state.moves[state.phase==='decide'?'decide':'explore']++;
+  const k=allocKey(a);
+  if (!state.explored.has(k)){ state.explored.add(k); state.exploredSeq.push([a.sell,a.help,a.prospect]); }
+  state.events.push({ t:now-state.t0, ph:state.phase[0], a:[a.sell,a.help,a.prospect] });
+  if (COND.ff==='live' && totalDays()===CFG.TOTAL_DAYS) state.projSeen.add(projStandings().rank);
+  update();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8. FLOW: explore → appraisal check → decide → lock → survey
+   ═══════════════════════════════════════════════════════════════ */
+function update(){
+  refreshSliders();
+  const t=totalDays(), left=CFG.TOTAL_DAYS-t;
+  $('totalUsed').textContent=t;
+  $('allocCounter').className='alloc-counter '+(left===0?'complete':'incomplete');
+  if (left>0) $('capHint').textContent = `${left} ${left===1?'day':'days'} left to allocate.`;
+  else if ($('capHint').textContent.includes('left to allocate')) $('capHint').textContent='';
+  renderFF();
+  if (COND.ff==='live') renderBoard('projBoard', projStandings().sorted);
+  updateButtons();
+}
+function updateButtons(){
+  const full = totalDays()===CFG.TOTAL_DAYS;
+  if (state.phase==='explore'){
+    const left = Math.max(0, Math.ceil((CFG.MIN_EXPLORE_MS-(Date.now()-state.t0))/1000));
+    $('phaseBar').textContent = 'Step 1 of 2 · Explore your options. Try different splits as often as you like.';
+    $('continueBtn').disabled = left>0;
+    $('continueBtn').textContent = left>0 ? `Continue (available in ${left} s)` : 'Continue →';
+  } else if (state.phase==='decide'){
+    $('phaseBar').textContent = 'Step 2 of 2 · Make your final decision. Adjust if you wish, then lock it in.';
+    $('continueBtn').classList.add('hidden'); $('lockBtn').classList.remove('hidden');
+    $('lockBtn').disabled = !full;
+    $('lockBtn').textContent = full ? '🔒 Lock final allocation' : `Allocate all ${CFG.TOTAL_DAYS} days to continue`;
+  }
+}
+const shuffle = arr => { for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; };
+window.openAppraisal = function(){
+  if (state.phase!=='explore') return;
+  if (!CFG.APPRAISAL_IN_SIM){ enterDecide(); return; }
+  state.phase='appraise';
+  const items=shuffle([...APPRAISAL_ITEMS]); state.appraisalOrder=items.map(i=>i.id);
+  $('appraisalItems').innerHTML = items.map(it=>`
+    <div class="likert-item"><div class="likert-text">${it.text}</div>
+      <div class="likert-scale">${[1,2,3,4,5,6,7].map(v=>`<label><input type="radio" name="${it.id}" value="${v}" onchange="checkAppraisal()">${v}</label>`).join('')}</div>
+      <div class="likert-anchors"><span>1 = Strongly disagree</span><span>7 = Strongly agree</span></div></div>`).join('');
+  $('appraisalSubmit').disabled=true;
+  $('appraisalModal').classList.add('show');
+};
+window.checkAppraisal = () => { $('appraisalSubmit').disabled = !APPRAISAL_ITEMS.every(it=>document.querySelector(`input[name="${it.id}"]:checked`)); };
+window.submitAppraisal = function(){
+  APPRAISAL_ITEMS.forEach(it=> state.appraisal[it.id] = +document.querySelector(`input[name="${it.id}"]:checked`).value);
+  $('appraisalModal').classList.remove('show'); enterDecide();
+};
+function enterDecide(){ state.allocAtAppraisal={...state.alloc}; state.tAppraisal=Date.now(); state.phase='decide'; update(); }
+
+window.openConfirm = function(){
+  if (state.phase!=='decide' || totalDays()!==CFG.TOTAL_DAYS) return;
+  const a=state.alloc;
+  $('modalSummary').innerHTML = `<div class="row"><span>💰 Selling</span><strong>${a.sell} days</strong></div>
+    <div class="row"><span>🤝 Helping ${esc(state.profile.teammate)}</span><strong>${a.help} days</strong></div>
+    <div class="row"><span>🔭 Prospecting</span><strong>${a.prospect} days</strong></div>`;
+  $('confirmModal').classList.add('show');
+};
+window.confirmLock = function(){
+  $('confirmModal').classList.remove('show');
+  if (state.phase!=='decide') return;
+  state.phase='locked'; state.tLock=Date.now();
+  document.querySelectorAll('.slider-track-wrap').forEach(t=>t.classList.add('disabled'));
+  $('lockBtn').classList.add('hidden'); $('surveyBtn').classList.remove('hidden');
+  $('phaseBar').textContent = '✅ Your allocation is saved. Your final results will be shown at the end of the study.';
+  const d = buildPayload();
+  try { const s=JSON.parse(localStorage.getItem('effort_sessions_v2')||'[]'); s.push(d); localStorage.setItem('effort_sessions_v2',JSON.stringify(s)); } catch(_){}
+  try { if (window.parent!==window) window.parent.postMessage({type:'EFFORT_DATA',data:d},'*'); } catch(_){}
+  if (CFG.LOG_ENDPOINT) fetch(CFG.LOG_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...d,events:state.events,exploredSeq:state.exploredSeq}),keepalive:true}).catch(()=>{});
+  console.log('EFFORT_DATA', d);
+};
+
+function buildPayload(){
+  const a=state.alloc, p=CFG.PLAN, ap=state.appraisal, t=state;
+  const mean = ids => ids.every(id=>ap[id]!=null) ? +(ids.reduce((s,id)=>s+ap[id],0)/ids.length).toFixed(3) : null;
+  return {
+    v:'2.0', sid:t.sid, pid:t.pid, ff:COND.ff, board:COND.board, cell:COND.cell,
+    sell:a.sell, help:a.help, prospect:a.prospect,
+    y1_dev:(Math.abs(a.sell-p.sell)+Math.abs(a.help-p.help)+Math.abs(a.prospect-p.prospect))/2,   // Y1 (0–8 days)
+    y2_help:a.help,                                                                                // Y2
+    d_sell:a.sell-p.sell, d_help:a.help-p.help, d_prospect:a.prospect-p.prospect,
+    alloc_at_m: t.allocAtAppraisal ? [t.allocAtAppraisal.sell,t.allocAtAppraisal.help,t.allocAtAppraisal.prospect] : null,
+    m_challenge:mean(['CH1','CH2','CH3','CH4']), m_hindrance:mean(['HI1','HI2','HI3','HI4']), m_coping:mean(['CP1','CP2']),
+    items:ap, item_order:t.appraisalOrder,
+    qtd_rank:qtdStandings().rank, plan_proj_rank:PLAN_RANK, final_proj_rank:projStandings().rank,
+    ...tradeoffKey(),
+    ms_explore: t.tAppraisal ? t.tAppraisal-t.t0 : null,
+    ms_decide: (t.tLock&&t.tAppraisal) ? t.tLock-t.tAppraisal : null,
+    ms_total: t.tLock ? t.tLock-t.t0 : null,
+    ms_first_move: t.firstMove ? t.firstMove-t.t0 : null,
+    ms_hesitation: (t.tLock&&t.lastMove) ? t.tLock-t.lastMove : null,
+    moves_explore:t.moves.explore, moves_decide:t.moves.decide, reversals:t.reversals,
+    n_configs:t.explored.size, n_proj_ranks_seen: COND.ff==='live' ? t.projSeen.size : 0,
+    custom_names:t.profile.customNames, custom_avatar:(t.profile.avatar||'').startsWith('data:')
+  };
+}
+window.goToSurvey = function(){
+  const d=buildPayload();
+  const q=new URLSearchParams({ sid:d.sid, ff:d.ff, board:d.board, cell:d.cell, y1:d.y1_dev, y2:d.y2_help,
+    tk_sell:d.tk_sell, tk_help:d.tk_help, data:JSON.stringify(d) });
+  if (d.pid) q.set('pid', d.pid);
+  location.href = CFG.SURVEY_URL + (CFG.SURVEY_URL.includes('?')?'&':'?') + q.toString();
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   9. SETUP, PREVIEW, ADMIN, START
+   ═══════════════════════════════════════════════════════════════ */
+window.saveSetup = function(){
+  state.profile.name = $('userName').value.trim() || 'You';
+  state.profile.avatar = $('userAvatarImg').src;
+  const tm = $('teammateName').value.trim(); if (tm) state.profile.teammate = tm;
+  const names=[1,2,3,4].map(i=>$('name'+i).value.trim()).filter(Boolean);
+  placeColleagues(names);
+  state.profile.customNames = names.length + (tm?1:0);
+  $('setupModal').classList.remove('show'); startSim();
+};
+window.skipNames = function(){ state.profile.avatar=$('userAvatarImg').src; $('setupModal').classList.remove('show'); startSim(); };
+
+function buildPreviewTabs(){
+  const nav=$('navTabs'); nav.classList.remove('hidden');
+  const fl={none:'🚫 No FF',static:'🔒 Static FF',live:'⚡ Live FF'}, bl={ind:'👤 Individual',team:'👥 Team'};
+  BOARD_LEVELS.forEach(b=>FF_LEVELS.forEach(f=>{
+    const btn=document.createElement('button');
+    btn.className='nav-tab'+(f===COND.ff&&b===COND.board?' active':'');
+    btn.textContent=`${fl[f]} × ${bl[b]}`;
+    btn.onclick=()=>{ location.search=`?preview=1&ff=${f}&board=${b}`; };
+    nav.appendChild(btn);
+  }));
+  $('cellBadge').textContent=COND.cell; $('cellBadge').classList.remove('hidden');
+}
+
+function startSim(){
+  state.phase='explore'; state.t0=Date.now();
+  PLAN_RANK = projStandings(CFG.PLAN).rank;
+  console.assert(PLAN_RANK===12, 'Calibration changed: plan projection is now #'+PLAN_RANK);
+  state.explored.add(allocKey(state.alloc)); state.exploredSeq.push([state.alloc.sell,state.alloc.help,state.alloc.prospect]);
+  if (COND.ff==='live') state.projSeen.add(PLAN_RANK);
+  buildSliders(); renderStaticUI(); update();
+  setInterval(()=>{ if (state.phase==='explore') updateButtons(); }, 250);
+}
+
+function showAdmin(){
+  const pwd=prompt('Researcher password:');
+  if (pwd!==CFG.ADMIN_PASSWORD){ alert('Incorrect password.'); location.href=location.pathname; return; }
+  $('app').style.display='none'; $('adminDashboard').classList.add('show');
+  const data=JSON.parse(localStorage.getItem('effort_sessions_v2')||'[]');
+  $('adminTable').innerHTML = !data.length ? '<p style="color:#94a3b8">No local sessions yet.</p>' :
+    `<table class="admin-table"><tr><th>SID</th><th>Cell</th><th>S/H/P</th><th>Y1</th><th>Chall.</th><th>Hind.</th><th>Configs</th><th>Total s</th></tr>` +
+    data.map(d=>`<tr><td>${esc(d.sid.slice(-6))}</td><td>${esc(d.cell)}</td><td>${d.sell}/${d.help}/${d.prospect}</td><td>${d.y1_dev}</td>
+      <td>${d.m_challenge??'–'}</td><td>${d.m_hindrance??'–'}</td><td>${d.n_configs}</td><td>${d.ms_total?Math.round(d.ms_total/1000):'–'}</td></tr>`).join('') + '</table>';
+}
+window.analyzeJson = function(){
+  try { let raw=$('adminJson').value.trim(); if (raw.startsWith('%7B')) raw=decodeURIComponent(raw);
+    const d=JSON.parse(raw);
+    $('adminResult').innerHTML = Object.entries(d).map(([k,v])=>`<div><b style="color:#38bdf8">${esc(k)}</b>: ${esc(typeof v==='object'?JSON.stringify(v):v)}</div>`).join('');
+  } catch(e){ $('adminResult').innerHTML='<p style="color:#ef4444">Invalid JSON.</p>'; }
+};
+
+/* Boot */
+buildEntities();
+randomizeAvatar('human');
+if (P.get('role')==='admin') showAdmin();
+else if (!VALID && !PREVIEW){ $('app').style.display='none'; $('invalidScreen').style.display='block'; }
+else { if (PREVIEW) buildPreviewTabs(); $('setupModal').classList.add('show'); }
+</script>
+</body>
+</html>
