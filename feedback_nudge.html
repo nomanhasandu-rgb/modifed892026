@@ -1,0 +1,1055 @@
+<!DOCTYPE html><html lang="en"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>From Reminders to Independent Action — Conceptual Models</title>
+
+  <style>
+    :root {
+      --ink: #203246;
+      --muted: #536579;
+      --background: #f3f6fa;
+      --paper: #ffffff;
+      --line: #cbd5e1;
+      --blue: #155e96;
+      --blue-light: #eaf3fb;
+      --green: #176b48;
+      --green-light: #eaf7ef;
+      --purple: #6940a3;
+      --purple-light: #f3edfb;
+      --amber: #80540b;
+      --amber-light: #fff6e3;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: var(--blue); }
+
+    a:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid var(--amber);
+      outline-offset: 4px;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -80px;
+      left: 12px;
+      padding: 10px;
+      background: white;
+      z-index: 10;
+    }
+
+    .skip-link:focus { top: 10px; }
+
+    header {
+      padding: 42px 24px;
+      background: #173a59;
+      color: white;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 0.82rem;
+      font-weight: bold;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(1.9rem, 4vw, 2.7rem);
+      line-height: 1.2;
+    }
+
+    header p {
+      max-width: 850px;
+      margin-bottom: 0;
+      color: #e6eef7;
+    }
+
+    nav {
+      background: white;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px 24px;
+    }
+
+    nav a {
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    nav a:hover { background: var(--blue-light); }
+
+    main { padding: 24px; }
+
+    .intro,
+    .study,
+    .closing {
+      margin-bottom: 26px;
+      padding: 28px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    .study { scroll-margin-top: 20px; }
+
+    h2 {
+      margin: 0 0 10px;
+      line-height: 1.25;
+      font-size: 1.7rem;
+    }
+
+    h3 {
+      margin-top: 24px;
+      margin-bottom: 10px;
+      font-size: 1.12rem;
+    }
+
+    p { margin-top: 0; }
+
+    .question {
+      padding: 14px 18px;
+      margin: 18px 0;
+      background: var(--blue-light);
+      border-left: 5px solid var(--blue);
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 0 6px 8px 0;
+      padding: 3px 9px;
+      border-radius: 5px;
+      font-size: 0.76rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .tag.base {
+      background: var(--blue-light);
+      color: var(--blue);
+    }
+
+    .tag.new {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .tag.workflow {
+      background: var(--purple-light);
+      color: var(--purple);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 24px;
+      margin-top: 15px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .legend strong {
+      color: var(--ink);
+      font-size: 1.2rem;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns:
+        minmax(0, 1fr) 40px
+        minmax(0, 1fr) 40px
+        minmax(0, 1fr);
+      align-items: stretch;
+      margin: 20px 0;
+    }
+
+    .node {
+      padding: 18px;
+      border: 2px solid var(--blue);
+      border-radius: 9px;
+      background: var(--blue-light);
+    }
+
+    .node h3 {
+      margin: 0 0 8px;
+      font-size: 1.03rem;
+    }
+
+    .node p,
+    .node ul {
+      margin: 0;
+      font-size: 0.94rem;
+    }
+
+    .node ul { padding-left: 19px; }
+
+    .node.mechanism {
+      background: white;
+      border-color: #7c8da0;
+      border-style: dashed;
+    }
+
+    .node.outcome {
+      background: var(--amber-light);
+      border-color: var(--amber);
+    }
+
+    .node.added {
+      background: var(--green-light);
+      border-color: var(--green);
+    }
+
+    .node.authorship {
+      background: var(--purple-light);
+      border-color: var(--purple);
+    }
+
+    .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .direct-test {
+      padding: 15px 18px;
+      border-left: 5px solid var(--blue);
+      background: #f2f7fc;
+      border-radius: 5px;
+    }
+
+    .direct-test.green {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    .direct-test.purple {
+      border-color: var(--purple);
+      background: var(--purple-light);
+    }
+
+    .direct-test p:last-child { margin-bottom: 0; }
+
+    .retained {
+      padding: 17px 20px;
+      margin: 18px 0;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #f8fafc;
+    }
+
+    .retained p:last-child { margin-bottom: 0; }
+
+    .mini-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .mini-flow span {
+      padding: 5px 9px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: white;
+      font-size: 0.92rem;
+    }
+
+    .mini-flow b { color: var(--muted); }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.93rem;
+    }
+
+    caption {
+      text-align: left;
+      font-weight: bold;
+      padding: 0 0 9px;
+    }
+
+    th, td {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    thead th { background: #edf2f7; }
+
+    tbody th {
+      background: #f8fafc;
+      font-weight: bold;
+    }
+
+    .highlight-row td,
+    .highlight-row th {
+      background: #eef7ff;
+    }
+
+    .note {
+      margin: 15px 0 0;
+      color: var(--muted);
+      font-size: 0.91rem;
+    }
+
+    .warning {
+      padding: 14px 17px;
+      margin-top: 18px;
+      background: var(--amber-light);
+      border-left: 4px solid var(--amber);
+      border-radius: 5px;
+    }
+
+    .formula {
+      padding: 17px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .mechanism-box {
+      padding: 10px;
+      margin-top: 9px;
+      background: #f7f9fc;
+      border-radius: 5px;
+    }
+
+    details {
+      margin-top: 20px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 13px 16px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+      color: var(--blue);
+    }
+
+    .lms-card {
+      margin-top: 15px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--blue);
+      border-radius: 6px;
+      background: white;
+      max-width: 790px;
+    }
+
+    .lms-card h4 { margin: 0 0 10px; }
+
+    .lms-card p { margin-bottom: 10px; }
+
+    .mock-button {
+      display: inline-block;
+      margin: 5px 7px 0 0;
+      padding: 7px 13px;
+      color: white;
+      background: var(--blue);
+      border-radius: 4px;
+      font-size: 0.91rem;
+      font-weight: bold;
+    }
+
+    .mock-button.secondary {
+      color: var(--ink);
+      background: #e8edf3;
+    }
+
+    .mock-field {
+      margin: 10px 0;
+      padding: 12px;
+      border: 1px solid #8394a8;
+      border-radius: 4px;
+      background: #fbfdff;
+    }
+
+    footer {
+      padding: 0 24px 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 800px) {
+      main { padding: 14px; }
+
+      .intro, .study, .closing { padding: 20px; }
+
+      .flow { grid-template-columns: 1fr; }
+
+      .arrow {
+        min-height: 40px;
+        transform: rotate(90deg);
+      }
+
+      h2 { font-size: 1.45rem; }
+    }
+
+    @media print {
+      body { background: white; }
+
+      header {
+        background: white;
+        color: black;
+        padding: 15px 0;
+      }
+
+      header p { color: #333; }
+
+      nav, .skip-link, details { display: none; }
+
+      main { padding: 0; }
+
+      .intro, .study, .closing {
+        border: 1px solid #aaa;
+        border-radius: 0;
+        margin-bottom: 20px;
+      }
+
+      .study {
+        break-before: page;
+      }
+
+      .node, tr, .direct-test, .retained {
+        break-inside: avoid;
+      }
+
+      .flow {
+        grid-template-columns:
+          minmax(0, 1fr) 30px
+          minmax(0, 1fr) 30px
+          minmax(0, 1fr);
+      }
+
+      .arrow {
+        transform: none;
+        min-height: auto;
+      }
+
+      footer { padding-bottom: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Skip to conceptual models</a>
+
+  <header>
+    <div class="container">
+      <p class="eyebrow">Three-study research program</p>
+      <h1>From Reminders to Independent Action</h1>
+      <p>
+        How can Canvas or Moodle guidance help students act now
+        without making later action depend on continued experimental
+        reminders?
+      </p>
+    </div>
+  </header>
+
+  <nav aria-label="Study navigation">
+    <div class="container nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#study1">Study 1: Connect</a>
+      <a href="#study2">Study 2: Sustain</a>
+      <a href="#study3">Study 3: Construct</a>
+    </div>
+  </nav>
+
+  <main id="main" class="container">
+
+    <section id="overview" class="intro" aria-labelledby="overview-title">
+      <h2 id="overview-title">How the framework grows</h2>
+
+      <p>
+        <strong>Study 1</strong> tests whether explaining the
+        feedback–action connection improves meaningful initiation.
+        <strong>Study 2</strong> adds cue design and randomized
+        support withdrawal.
+        <strong>Study 3</strong> adds the student's role in
+        constructing the plan.
+      </p>
+
+      <p>
+        <strong>Primary behavior:</strong> saving a task-relevant
+        first response at least 48 hours before the assignment
+        deadline—not simply opening the assignment.
+      </p>
+
+      <div class="legend">
+        <span><strong>→</strong> Direct randomized comparison</span>
+        <span><strong>⇢</strong> Proposed explanatory pathway</span>
+        <span>“Retained” = carried into the next study</span>
+        <span>“New” = added in this study</span>
+      </div>
+
+      <p class="note">
+        These are conceptual diagrams, not complete causal DAGs.
+        Measured mechanisms do not automatically establish causal
+        mediation. Retaining a design in a later study does not
+        imply that every earlier hypothesis was supported.
+      </p>
+    </section>
+
+    <!-- STUDY 1 -->
+    <section id="study1" class="study" aria-labelledby="study1-title">
+      <span class="tag base">Initial framework</span>
+      <h2 id="study1-title">
+        Study 1 — Connect the diagnosis to the action
+      </h2>
+
+      <div class="question">
+        Does an explicit explanation improve action beyond
+        presenting the same feedback and plan separately?
+      </div>
+
+      <div class="flow" role="group" aria-label="Study 1 proposed explanatory pathway">
+
+        <div class="node">
+          <h3>Randomized message design</h3>
+          <p>
+            Main contrast: feedback and plan shown together
+            <strong>without</strong> versus
+            <strong>with</strong> an explicit connecting explanation.
+          </p>
+        </div>
+
+        <div class="arrow" aria-hidden="true">⇢</div>
+
+        <div class="node mechanism">
+          <h3>Proposed explanation</h3>
+          <ul>
+            <li>Clearer understanding</li>
+            <li>Greater perceived relevance</li>
+            <li>Confidence in the next step</li>
+          </ul>
+        </div>
+
+        <div class="arrow" aria-hidden="true">⇢</div>
+
+        <div class="node outcome">
+          <h3>Behavior during support</h3>
+          <p>
+            Timely meaningful initiation.
+            Completion and work quality are secondary outcomes.
+          </p>
+        </div>
+      </div>
+
+      <div class="direct-test">
+        <strong>Direct randomized test:</strong>
+        E versus D → timely meaningful initiation.
+        <p>
+          The explanation is added; the feedback, goal,
+          cue, and action remain substantively the same.
+        </p>
+      </div>
+
+      <h3>Five treatment conditions</h3>
+
+      <div class="table-wrap">
+        <table>
+          <caption>Study 1 component comparison</caption>
+          <thead>
+            <tr>
+              <th scope="col">Condition</th>
+              <th scope="col">Deadline + goal</th>
+              <th scope="col">Feedback</th>
+              <th scope="col">Plan</th>
+              <th scope="col">Explicit link</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">A. Active control</th>
+              <td>Yes</td><td>No</td><td>No</td><td>No</td>
+            </tr>
+            <tr>
+              <th scope="row">B. Feedback</th>
+              <td>Yes</td><td>Yes</td><td>No</td><td>No</td>
+            </tr>
+            <tr>
+              <th scope="row">C. Plan</th>
+              <td>Yes</td><td>No</td><td>Yes</td><td>No</td>
+            </tr>
+            <tr class="highlight-row">
+              <th scope="row">D. Co-presented</th>
+              <td>Yes</td><td>Yes</td><td>Yes</td><td>No</td>
+            </tr>
+            <tr class="highlight-row">
+              <th scope="row">E. Explicitly linked</th>
+              <td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note">
+        E versus D tests explicit linkage, not personalized
+        action selection. Students in D may infer a connection
+        even when it is not stated.
+      </p>
+
+      <details>
+        <summary>View the key Canvas/Moodle message contrast</summary>
+
+        <div class="lms-card">
+          <h4>Assignment 4 · Weekly study check-in</h4>
+          <p>
+            <strong>Due:</strong> Sunday, 11:59 pm<br>
+            <strong>Target:</strong> Begin by Friday, 11:59 pm.
+          </p>
+          <p>
+            Your first saved answer on the previous assignment
+            was recorded 8 hours before the deadline.
+            The study target was at least 48 hours.
+          </p>
+          <p>
+            <strong>D — Co-presented:</strong><br>
+            After Wednesday's class ends at 11:50 am,
+            open Assignment 4 and save your answer to Question 1.
+          </p>
+          <p>
+            <strong>E — Explicitly linked:</strong><br>
+            <mark>To move your first saved answer earlier,</mark>
+            after Wednesday's class ends at 11:50 am,
+            open Assignment 4 and save your answer to Question 1.
+          </p>
+          <span class="mock-button">Open Assignment 4</span>
+        </div>
+
+        <p class="note">
+          Illustrative researcher comparison. Students see only
+          their assigned version, without treatment labels or
+          highlighting. Actual feedback uses actual records.
+        </p>
+      </details>
+    </section>
+
+    <!-- STUDY 2 -->
+    <section id="study2" class="study" aria-labelledby="study2-title">
+      <span class="tag base">Retains Study 1 foundation</span>
+      <span class="tag new">New: cue and withdrawal</span>
+
+      <h2 id="study2-title">
+        Study 2 — Test what survives when support stops
+      </h2>
+
+      <div class="question">
+        Is withdrawal less disruptive when the plan refers to
+        a recurring course event rather than an experimental reminder?
+      </div>
+
+      <div class="retained">
+        <strong>Retained from Study 1</strong>
+        <div class="mini-flow">
+          <span>Linked feedback and plan</span>
+          <b aria-hidden="true">⇢</b>
+          <span>Understanding and relevance</span>
+          <b aria-hidden="true">⇢</b>
+          <span>Meaningful initiation</span>
+        </div>
+        <p class="note">
+          Linked guidance is held constant while cue design changes.
+        </p>
+      </div>
+
+      <div class="flow" role="group" aria-label="Study 2 added explanatory pathway">
+
+        <div class="node added">
+          <h3>New randomized factors</h3>
+          <p>
+            <strong>Cue:</strong> experimental reminder
+            versus recurring course event.
+          </p>
+          <p>
+            <strong>Follow-up support:</strong>
+            continued versus withdrawn.
+          </p>
+        </div>
+
+        <div class="arrow" aria-hidden="true">⇢</div>
+
+        <div class="node mechanism">
+          <h3>Proposed explanation</h3>
+          <p>
+            The recurring event remains available after reminders
+            stop. Action may continue to follow that event.
+          </p>
+          <p class="note">
+            Cue-aligned behavior is supporting evidence,
+            not proof of automatic habit.
+          </p>
+        </div>
+
+        <div class="arrow" aria-hidden="true">⇢</div>
+
+        <div class="node outcome">
+          <h3>New follow-up outcome</h3>
+          <p>
+            Timely meaningful initiation under continued
+            versus withdrawn support.
+          </p>
+          <p>
+            Also assess completion and work quality.
+          </p>
+        </div>
+      </div>
+
+      <div class="direct-test green">
+        <strong>Direct randomized test:</strong>
+        cue type × withdrawal → follow-up behavior.
+        <p>
+          Prediction: the withdrawal penalty is smaller
+          under the independent-cue design.
+        </p>
+      </div>
+
+      <h3>Four follow-up groups</h3>
+
+      <div class="table-wrap">
+        <table>
+          <caption>Study 2: 2 × 2 design</caption>
+          <thead>
+            <tr>
+              <th scope="col">Cue type</th>
+              <th scope="col">Continued support</th>
+              <th scope="col">Withdrawn support</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Experimental reminder</th>
+              <td>S2-1: reminder cue + continued messages</td>
+              <td>S2-2: reminder cue + no new messages</td>
+            </tr>
+            <tr>
+              <th scope="row">Recurring course event</th>
+              <td>S2-3: class-end cue + continued messages</td>
+              <td>S2-4: class-end cue + no new messages</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="formula">
+        Withdrawal penalty = continued-support rate
+        − withdrawn-support rate
+        <br><br>
+        Predicted contrast:
+        penalty for reminder cue &gt; penalty for class-end cue
+      </div>
+
+      <div class="warning">
+        <strong>Interpretation check:</strong>
+        A small penalty is not enough if behavior is poor in both
+        support conditions. Report absolute performance as well
+        as the interaction.
+      </div>
+
+      <details>
+        <summary>View the cue wording and withdrawal policy</summary>
+
+        <div class="lms-card">
+          <h4>Your plan for this week</h4>
+          <p>
+            <strong>Dependent cue:</strong><br>
+            To move your first saved answer earlier,
+            when your Wednesday 11:50 am study reminder
+            arrives in Canvas, open Assignment 4 and
+            save your answer to Question 1.
+          </p>
+          <p>
+            <strong>Independent cue:</strong><br>
+            To move your first saved answer earlier,
+            when Wednesday's class ends at 11:50 am,
+            open Assignment 4 and save your answer to Question 1.
+          </p>
+        </div>
+
+        <p class="note">
+          During initial support, both groups receive a Monday
+          planning card and the same Wednesday 11:50 am reminder.
+          During withdrawal, new experimental cards and reminders
+          stop. Ordinary deadlines, course access, saved plans,
+          and educational support remain available.
+        </p>
+      </details>
+
+      <p class="note">
+        The estimand is a cue-design policy effect. Delivery,
+        reading time, actual class end, and student availability
+        cannot be made perfectly identical.
+      </p>
+    </section>
+
+    <!-- STUDY 3 -->
+    <section id="study3" class="study" aria-labelledby="study3-title">
+      <span class="tag base">Retains linked guidance</span>
+      <span class="tag new">Retains withdrawal test</span>
+      <span class="tag workflow">New: plan construction</span>
+
+      <h2 id="study3-title">
+        Study 3 — Change who constructs the plan
+      </h2>
+
+      <div class="question">
+        Does participating in plan construction improve later
+        action enough to justify the extra planning effort?
+      </div>
+
+      <div class="retained">
+        <strong>Retained from Study 1</strong>
+        <div class="mini-flow">
+          <span>Linked feedback and plan</span>
+          <b aria-hidden="true">⇢</b>
+          <span>Understanding and relevance</span>
+          <b aria-hidden="true">⇢</b>
+          <span>Meaningful initiation</span>
+        </div>
+
+        <strong>Retained from Study 2</strong>
+        <div class="mini-flow">
+          <span>Independent course-event cue</span>
+          <span>Randomized continuation or withdrawal</span>
+          <b aria-hidden="true">→</b>
+          <span>Follow-up behavior</span>
+        </div>
+      </div>
+
+      <div class="flow" role="group" aria-label="Study 3 added explanatory pathways">
+
+        <div class="node authorship">
+          <h3>New randomized workflow</h3>
+          <ul>
+            <li>Rule-based plan</li>
+            <li>AI draft, no editing</li>
+            <li>AI draft, editing available</li>
+            <li>Self-written plan</li>
+          </ul>
+        </div>
+
+        <div class="arrow" aria-hidden="true">⇢</div>
+
+        <div class="node mechanism">
+          <h3>Competing explanations</h3>
+
+          <div class="mechanism-box">
+            <strong>Possible benefit</strong><br>
+            Ownership, personal fit, understanding, and recall.
+          </div>
+
+          <div class="mechanism-box">
+            <strong>Possible cost</strong><br>
+            More planning time, effort, and possible abandonment.
+          </div>
+        </div>
+
+        <div class="arrow" aria-hidden="true">⇢</div>
+
+        <div class="node outcome">
+          <h3>Behavior and burden</h3>
+          <ul>
+            <li>Initiation during support</li>
+            <li>Initiation after withdrawal</li>
+            <li>Withdrawal penalty</li>
+            <li>Completion and quality</li>
+            <li>Planning burden</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="direct-test purple">
+        <strong>Primary randomized test:</strong>
+        editable versus non-editable AI draft →
+        initiation in the withdrawal group.
+        <p>
+          <strong>Withdrawal-specific test:</strong>
+          editing workflow × withdrawal → follow-up behavior.
+        </p>
+      </div>
+
+      <h3>Four workflows, each crossed with support</h3>
+
+      <div class="table-wrap">
+        <table>
+          <caption>Study 3: 4 × 2 design</caption>
+          <thead>
+            <tr>
+              <th scope="col">Workflow</th>
+              <th scope="col">Student participation</th>
+              <th scope="col">Continue</th>
+              <th scope="col">Withdraw</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">T1. Rule-based plan</th>
+              <td>Accept or decline a complete plan</td>
+              <td>T1-C</td>
+              <td>T1-W</td>
+            </tr>
+            <tr class="highlight-row">
+              <th scope="row">T2. AI draft, no editing</th>
+              <td>Accept or decline a read-only draft</td>
+              <td>T2-C</td>
+              <td>T2-W</td>
+            </tr>
+            <tr class="highlight-row">
+              <th scope="row">T3. Editable AI draft</th>
+              <td>Review, optionally revise, then adopt or decline</td>
+              <td>T3-C</td>
+              <td>T3-W</td>
+            </tr>
+            <tr>
+              <th scope="row">T4. Self-written plan</th>
+              <td>Create a plan using a structured template</td>
+              <td>T4-C</td>
+              <td>T4-W</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        <strong>Held comparable:</strong> behavioral target,
+        feedback, available information, permissible independent
+        cues, feasible actions, assignment access, and the right
+        to decline.
+      </p>
+
+      <p>
+        <strong>T2 versus T3:</strong> use the same initial AI
+        drafting procedure. Editing is available in T3 but is
+        never compulsory.
+      </p>
+
+      <div class="warning">
+        <strong>Do not label this a pure ownership effect.</strong>
+        Editing can change fit, comprehension, effort, and final
+        plan content. Measure these separately. No universal
+        ranking of the four workflows is assumed.
+      </div>
+
+      <details>
+        <summary>View an editable AI planning screen</summary>
+
+        <div class="lms-card">
+          <h4>Review your AI-drafted plan</h4>
+
+          <p>
+            Your first saved answer on the previous assignment
+            was recorded 8 hours before the deadline.
+            To move your first saved answer earlier, connect
+            a small first step to a recurring event.
+          </p>
+
+          <p>
+            This draft was created by AI using your course
+            timetable and the available first-step options.
+          </p>
+
+          <div class="mock-field">
+            After Wednesday's class ends, I will open the
+            weekly assignment in the library and save
+            an answer to Question 1.
+          </div>
+
+          <p>
+            Keep the draft if it fits your routine.
+            You may change the recurring event, place, or
+            first step using the available options.
+            No change is required.
+          </p>
+
+          <span class="mock-button">Save and use this plan</span>
+          <span class="mock-button secondary">Skip for now</span>
+        </div>
+
+        <p class="note">
+          Static illustration only. In T2, the initial draft
+          is read-only. In T4, students receive blank structured
+          fields, not a completed draft.
+        </p>
+      </details>
+    </section>
+
+    <section class="closing" aria-labelledby="closing-title">
+      <h2 id="closing-title">The central distinction</h2>
+
+      <p>
+        <strong>
+          Improving behavior while support is present is not
+          the same as sustaining behavior when proactive
+          support is removed.
+        </strong>
+      </p>
+
+      <ul>
+        <li><strong>Study 1:</strong> Does the connection help?</li>
+        <li><strong>Study 2:</strong> Does the trigger survive?</li>
+        <li>
+          <strong>Study 3:</strong> Does participation help,
+          and at what cost?
+        </li>
+      </ul>
+
+      <p class="note">
+        “Independent action” means action without new experimental
+        prompts. It does not mean action without normal course
+        resources, saved plans, calendars, or accessibility support.
+        Four weeks of follow-up does not establish permanent
+        change or automatic habit.
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="container">
+    Research concept prototype · Illustrative Canvas/Moodle-style
+    content · Not an official platform interface · No student data
+  </footer>
+
+
+</body></html>
