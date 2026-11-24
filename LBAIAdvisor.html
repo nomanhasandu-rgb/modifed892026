@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Effort Allocation Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ink: #0d2b24; --deep1: #0a3d33; --deep2: #12564a;
+  --mint: #7ae89a; --mint-d: #34a853; --sky: #7ac8e8; --sky-d: #3a9ad9;
+  --gold: #e8c86a; --violet: #6d5efc; --violet-l: #9b8bff;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(1400px 700px at 8% -10%, #e2f3e8 0%, #d9ece0 45%, #cfe3e6 100%);
+  min-height: 100vh;
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: 18px; color: var(--ink);
+  -webkit-font-smoothing: antialiased; user-select: none;
+}
+
+.app {
+  width: 100%; max-width: 1580px;
+  height: calc(100vh - 36px); min-height: 720px;
+  background: #fff; border-radius: 26px;
+  box-shadow: 0 34px 80px rgba(12,55,38,0.20);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+
+/* ══ HEADER ══ */
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 24px;
+  background: linear-gradient(90deg,#ffffff,#f4fbf7);
+  border-bottom: 1px solid rgba(30,126,52,0.10);
+  gap: 16px; flex-wrap: wrap; flex-shrink: 0;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 40px; height: 40px; border-radius: 13px;
+  background: linear-gradient(135deg,#1e7e34,#34a853);
+  display: grid; place-items: center; font-size: 19px;
+  box-shadow: 0 7px 18px rgba(30,126,52,0.30);
+}
+.brand-text h1 { font-size: 16px; font-weight: 800; color: #0e3b23; letter-spacing: -0.015em; }
+
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cond-wrap {
+  display: flex; align-items: center; gap: 8px;
+  background: #f4fbf6; border: 1px solid rgba(30,126,52,0.16);
+  border-radius: 11px; padding: 6px 11px;
+}
+.cond-wrap label { font-size: 9px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; color: #5d7f6c; }
+.cond-wrap select { font-family: inherit; font-size: 11.5px; font-weight: 700; color: #145a2a; background: transparent; border: none; outline: none; cursor: pointer; }
+.badge-live {
+  background: linear-gradient(135deg,#1e7e34,#34a853);
+  color: #fff; font-size: 10.5px; font-weight: 800;
+  padding: 6px 13px; border-radius: 20px;
+  animation: pulse 2s infinite; letter-spacing: 0.3px;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.62} }
+
+/* ══ CASE TABS ══ */
+.case-tabs { display: flex; gap: 8px; padding: 10px 24px 0; flex-shrink: 0; overflow-x: auto; }
+.case-tab {
+  flex: 1; min-width: 250px; display: flex; align-items: center; gap: 9px;
+  padding: 12px 16px; background: #f6fbf8;
+  border: 1.5px solid rgba(30,126,52,0.10); border-radius: 12px;
+  cursor: pointer; transition: all 0.2s ease; font-family: inherit; text-align: left;
+}
+.case-tab:hover:not(.locked) { background: #eef8f1; border-color: rgba(30,126,52,0.25); }
+.case-tab.active {
+  background: linear-gradient(135deg,#1e7e34,#34a853); border-color: transparent;
+  box-shadow: 0 6px 16px rgba(30,126,52,0.28);
+}
+.case-tab.active .ct-num { background: rgba(255,255,255,0.24); color: #fff; }
+.case-tab.active .ct-name { color: #fff; }
+.case-tab.active .ct-tag { background: rgba(255,255,255,0.20); color: #fff; }
+.case-tab.completed { background: rgba(122,232,154,0.13); border-color: rgba(30,126,52,0.30); }
+.case-tab.locked { opacity: 0.55; cursor: not-allowed; }
+.ct-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(30,126,52,0.13); color: #1e7e34;
+  display: grid; place-items: center; font-size: 11px; font-weight: 900; flex-shrink: 0;
+}
+.ct-name { font-size: 13px; font-weight: 800; color: #145a2a; flex: 1; white-space: nowrap; }
+.ct-tag {
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 3px 7px; border-radius: 6px;
+  background: rgba(30,126,52,0.10); color: #1e7e34; flex-shrink: 0;
+}
+.ct-tag.conflict { background: rgba(232,93,74,0.13); color: #b8402e; }
+.ct-tag.synergy  { background: rgba(58,154,217,0.13); color: #2372a8; }
+.case-tab.active .ct-tag.conflict { background: rgba(255,200,190,0.28); color: #ffe3dc; }
+.case-tab.active .ct-tag.synergy  { background: rgba(190,225,255,0.28); color: #e0f2ff; }
+
+/* ══ MAIN GRID — 2 columns now ══ */
+main {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 15px; padding: 14px 24px 18px;
+}
+@media (max-width: 1100px) {
+  main { grid-template-columns: 1fr; overflow-y: auto; }
+  .app { height: auto; } body { align-items: flex-start; }
+}
+
+.panel {
+  border-radius: 20px; padding: 15px;
+  display: flex; flex-direction: column; gap: 11px;
+  min-height: 0; overflow: hidden;
+}
+.panel.dark {
+  background: linear-gradient(168deg, var(--deep1) 0%, var(--deep2) 100%);
+  color: #fff; border: 1px solid rgba(122,232,210,0.14);
+  box-shadow: 0 12px 30px rgba(10,61,51,0.28);
+}
+.panel.dark::-webkit-scrollbar { width: 6px; }
+.panel.dark::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
+
+.panel-title {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.65px;
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0; color: #fff;
+}
+.panel-title::after {
+  content: ''; flex: 1; height: 1.5px;
+  background: linear-gradient(90deg, currentColor, transparent); opacity: 0.28;
+}
+
+/* ══ OUTCOME PANEL ══ */
+.outcome { overflow-y: auto; }
+
+.rank-card {
+  background: rgba(255,255,255,0.075); border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 14px; padding: 12px 14px; border-left: 4px solid var(--mint); flex-shrink: 0;
+}
+.rank-header {
+  display: flex; align-items: center; gap: 8px; font-size: 9.5px; font-weight: 800;
+  letter-spacing: 0.6px; text-transform: uppercase;
+  color: rgba(255,255,255,0.92); margin-bottom: 6px;
+}
+.hdr-icon {
+  width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.24);
+  border: 1.5px solid rgba(255,255,255,0.45); display: grid; place-items: center; font-size: 12px;
+}
+.rank-row { display: flex; align-items: baseline; gap: 3px; }
+.rank-prefix { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.8); }
+.rank-value { font-size: 27px; font-weight: 900; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; }
+.rank-of { font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,0.72); }
+.rank-move {
+  margin-left: auto; font-size: 10.5px; font-weight: 800;
+  padding: 2px 8px; border-radius: 9px; font-family: 'SF Mono','Courier New',monospace;
+}
+.rank-move.up   { background: rgba(122,232,154,0.26); color: #b3ffd1; }
+.rank-move.down { background: rgba(232,93,74,0.26);  color: #ffb9a5; }
+.rank-move.flat { background: rgba(255,255,255,0.16); color: #fff; }
+
+.metric-card {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.11);
+  border-radius: 12px; padding: 10px 12px; flex-shrink: 0;
+}
+.metric-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.metric-name {
+  font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.92);
+  display: flex; align-items: center; gap: 5px;
+}
+.metric-name .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot.own  { background: var(--mint); }
+.dot.team { background: var(--gold); }
+.metric-score {
+  font-size: 11px; font-weight: 800; font-family: 'SF Mono','Courier New',monospace;
+  color: #fff; white-space: nowrap;
+}
+.metric-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.14); border-radius: 10px; overflow: hidden; }
+.metric-fill { height: 100%; border-radius: 10px; transition: width 0.35s cubic-bezier(.34,1.56,.64,1); }
+.metric-fill.own  { background: linear-gradient(90deg, var(--mint), var(--mint-d)); }
+.metric-fill.team { background: linear-gradient(90deg, var(--gold), #c9962e); }
+
+/* Tiers */
+.tier-display {
+  display: flex; align-items: center; gap: 10px; margin-top: 4px;
+}
+.tier-badge {
+  padding: 4px 12px; border-radius: 8px; font-size: 13px; font-weight: 900;
+  letter-spacing: 0.5px; text-transform: uppercase; display: inline-block;
+}
+.tier-badge.pioneer { background: linear-gradient(135deg, #ffd966, #f7c948); color: #5a3d00; box-shadow: 0 4px 12px rgba(255,217,102,0.3); }
+.tier-badge.challenger { background: linear-gradient(135deg, #c3d6cd, #a3bdb2); color: #1c3830; box-shadow: 0 4px 12px rgba(163,189,178,0.3); }
+.tier-badge.trailblazer { background: linear-gradient(135deg, #e0a96d, #c48a4d); color: #4a2000; box-shadow: 0 4px 12px rgba(196,138,77,0.3); }
+.tier-sub { font-size: 10.5px; color: rgba(255,255,255,0.6); font-weight: 600; }
+
+.firm-box {
+  background: linear-gradient(135deg, rgba(232,200,106,0.20), rgba(232,200,106,0.07));
+  border: 1px solid rgba(232,200,106,0.42);
+  border-radius: 14px; padding: 11px 14px; flex-shrink: 0;
+}
+.firm-label {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase;
+  color: #ffe9a8; margin-bottom: 3px; display: flex; align-items: center; gap: 6px;
+}
+.firm-value { font-size: 24px; font-weight: 900; letter-spacing: -0.03em; color: #fff; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.firm-break { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.72); margin-top: 3px; font-family: 'SF Mono','Courier New',monospace; }
+
+/* ══ CONTROL PANEL ══ */
+.control { gap: 10px; }
+
+.budget-card {
+  background: rgba(255,255,255,0.075); border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 13px; padding: 10px 13px; flex-shrink: 0;
+}
+.budget-label { font-size: 9px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; color: rgba(255,255,255,0.85); margin-bottom: 3px; }
+.budget-value { font-size: 19px; font-weight: 900; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.budget-value .own-part  { color: var(--mint); }
+.budget-value .sep       { color: rgba(255,255,255,0.4); margin: 0 5px; font-weight: 500; }
+.budget-value .help-part { color: var(--sky); }
+.budget-unit { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); margin-left: 4px; }
+
+.slider-group {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.11);
+  border-radius: 13px; padding: 11px 13px 10px; flex-shrink: 0;
+}
+.sg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; gap: 8px; }
+.sg-label { font-size: 11.5px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 7px; }
+.sg-label .icn {
+  width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.22);
+  display: grid; place-items: center; font-size: 11px;
+}
+.sg-value {
+  font-family: 'SF Mono','Courier New',monospace; font-size: 10.5px; font-weight: 900;
+  padding: 3px 9px; border-radius: 14px; white-space: nowrap;
+}
+.sg-value.own  { background: rgba(122,232,154,0.24); color: #c7ffdc; }
+.sg-value.help { background: rgba(122,200,232,0.24); color: #ccf0ff; }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 26px; background: transparent; cursor: pointer; display: block; margin: 0;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 8px; border-radius: 8px;
+  background: linear-gradient(90deg,
+    var(--fillcol, #7ae89a) 0 var(--pct, 50%),
+    rgba(255,255,255,0.18) var(--pct, 50%) 100%);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 22px; height: 22px; margin-top: -7px; border-radius: 50%; background: #fff;
+  border: 3px solid var(--fillb, #1e7e34);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.38), 0 0 0 4px rgba(255,255,255,0.10);
+  transition: box-shadow 0.2s ease;
+}
+input[type=range]:active::-webkit-slider-thumb {
+  box-shadow: 0 3px 10px rgba(0,0,0,0.38), 0 0 0 7px rgba(255,255,255,0.18);
+}
+input[type=range]::-moz-range-track { height: 8px; border-radius: 8px; background: rgba(255,255,255,0.18); }
+input[type=range]::-moz-range-progress { height: 8px; border-radius: 8px; background: var(--fillcol, #7ae89a); }
+input[type=range]::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--fillb, #1e7e34);
+}
+input[type=range]:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.live-card {
+  background: rgba(255,255,255,0.055); border: 1.5px dashed rgba(255,217,102,0.45);
+  border-radius: 13px; padding: 10px 13px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+}
+.live-title { font-size: 9px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; color: #ffd966; display: flex; align-items: center; gap: 5px; }
+.live-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 10.5px; color: rgba(255,255,255,0.82); gap: 8px; }
+.live-row b { font-family: 'SF Mono','Courier New',monospace; font-size: 11px; font-weight: 800; color: #fff; }
+.live-row b.gold { color: var(--gold); }
+
+.btn { border: none; border-radius: 30px; font-family: inherit; font-weight: 800; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; }
+.btn-lock {
+  background: var(--mint); color: #0a3d1f; font-size: 12.5px; padding: 13px 18px;
+  box-shadow: 0 8px 22px rgba(122,232,154,0.34);
+}
+.btn-lock:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(122,232,154,0.48); }
+.btn-lock:disabled { opacity: 0.42; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-lock.continue { background: #ffd966; box-shadow: 0 8px 22px rgba(255,217,102,0.38); }
+.btn-hint { font-size: 9.5px; font-weight: 600; color: rgba(255,255,255,0.55); text-align: center; line-height: 1.45; margin-top: -4px; flex-shrink: 0; }
+.btn-hint b { color: #ffd966; font-weight: 800; }
+
+/* ══ TA FLOATING WIDGET ══ */
+.ta-widget {
+  position: fixed; bottom: 24px; right: 24px; z-index: 500;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+
+.ta-fab {
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #6d5efc, #8a6bff);
+  color: #fff; border-radius: 50px; padding: 11px 18px 11px 12px;
+  cursor: pointer; box-shadow: 0 8px 28px rgba(109,94,252,0.46);
+  transition: all 0.25s cubic-bezier(.34,1.56,.64,1); user-select: none;
+  border: none; font-family: inherit;
+}
+.ta-fab:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(109,94,252,0.56); }
+
+.ta-fab-avatar {
+  width: 36px; height: 36px; background: rgba(255,255,255,0.22); border-radius: 50%;
+  display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+}
+.ta-fab-info {}
+.ta-fab-label { font-size: 13px; font-weight: 800; letter-spacing: -0.01em; }
+.ta-fab-sub   { font-size: 9.5px; font-weight: 600; opacity: 0.78; margin-top: 1px; }
+.ta-fab-dot   {
+  width: 10px; height: 10px; border-radius: 50%; background: #7ae89a;
+  box-shadow: 0 0 0 3px rgba(122,232,154,0.35); animation: pulse 2s infinite; flex-shrink: 0;
+}
+
+/* TA Panel */
+.ta-panel {
+  width: 540px; height: 580px;
+  background: linear-gradient(180deg,#ffffff 0%,#f8f9ff 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(109,94,252,0.22), 0 2px 12px rgba(0,0,0,0.12);
+  border: 1px solid rgba(109,94,252,0.18);
+  display: flex; flex-direction: column; overflow: hidden;
+  transition: height 0.3s cubic-bezier(.34,1.4,.64,1), width 0.3s cubic-bezier(.34,1.4,.64,1), opacity 0.25s ease;
+  transform-origin: bottom right;
+}
+.ta-panel.ta-hidden   { display: none; }
+.ta-panel.ta-min      { height: 64px; overflow: hidden; }
+.ta-panel.ta-max      { width: 740px; height: calc(100vh - 100px); }
+
+/* TA Panel Header */
+.ta-phdr {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 11px 14px; background: linear-gradient(90deg,#f7f4ff,#f2f8ff);
+  border-bottom: 1px solid #eceffa; flex-shrink: 0;
+}
+.ta-phdr-left { display: flex; align-items: center; gap: 10px; }
+.ta-phdr-ava {
+  width: 36px; height: 36px; border-radius: 12px;
+  background: linear-gradient(135deg,#6d5efc,#8a6bff);
+  display: grid; place-items: center; font-size: 17px;
+  box-shadow: 0 5px 14px rgba(109,94,252,0.30); flex-shrink: 0;
+}
+.ta-phdr-name {
+  font-size: 13px; font-weight: 800; color: #1c2340;
+  display: flex; align-items: center; gap: 6px;
+}
+.ai-pill {
+  font-size: 8.5px; font-weight: 900; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 5px;
+  background: linear-gradient(135deg,#ece8ff,#f5f0ff); color: #5b4bd6; border: 1px solid #dcd4ff;
+}
+.ta-phdr-sub { font-size: 10px; font-weight: 600; color: #8b8fb0; margin-top: 1px; }
+.ta-phdr-status {
+  display: flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; color: #34a853;
+  background: #effbf3; padding: 4px 9px; border-radius: 12px; border: 1px solid #cdecd8; margin-left: 8px;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: #34a853; animation: pulse 1.8s infinite; }
+
+.ta-phdr-btns { display: flex; gap: 4px; align-items: center; }
+.ta-ctrl {
+  width: 28px; height: 28px; border-radius: 8px; border: 1px solid #e0d9ff;
+  background: #fff; color: #5b4bd6; font-size: 14px; cursor: pointer;
+  display: grid; place-items: center; transition: all 0.15s ease;
+  font-family: inherit; font-weight: 700; line-height: 1;
+}
+.ta-ctrl:hover { background: #f0ecff; border-color: #b9b0f5; }
+.ta-ctrl.close { color: #888; border-color: #e0e0e0; }
+.ta-ctrl.close:hover { background: #fff0f0; border-color: #ffcdd2; color: #c62828; }
+
+/* TA Panel Body */
+.ta-body { flex: 1; min-height: 0; overflow: hidden; position: relative; }
+
+/* Chat inside TA */
+.chat {
+  position: absolute; inset: 0; overflow-y: auto;
+  display: none; flex-direction: column; gap: 9px;
+  padding: 12px 10px 6px; scroll-behavior: smooth;
+}
+.chat.active { display: flex; }
+.chat::-webkit-scrollbar { width: 5px; }
+.chat::-webkit-scrollbar-thumb { background: rgba(28,35,64,0.14); border-radius: 3px; }
+
+.msg { display: flex; gap: 7px; max-width: 94%; animation: msgIn 0.32s cubic-bezier(.22,1,.36,1) both; }
+@keyframes msgIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:none} }
+.msg.bot  { align-self: flex-start; }
+.msg.user { align-self: flex-end; justify-content: flex-end; }
+.msg.card { max-width: 100%; width: 100%; }
+
+.mini-ava {
+  width: 22px; height: 22px; border-radius: 8px;
+  background: linear-gradient(135deg,#ece8ff,#f6f2ff);
+  border: 1px solid #e0d9ff; display: grid; place-items: center;
+  font-size: 10px; flex-shrink: 0; margin-top: 1px;
+}
+.bubble {
+  padding: 9px 13px; border-radius: 15px; font-size: 12.2px; line-height: 1.55;
+  color: #1c2340; border-bottom-left-radius: 5px; background: #f1f3f9;
+}
+.bubble b { font-weight: 800; }
+.msg.user .bubble {
+  background: linear-gradient(135deg,#1e7e34,#2f9e4f); color: #fff;
+  border-bottom-left-radius: 15px; border-bottom-right-radius: 5px;
+  box-shadow: 0 4px 12px rgba(30,126,52,0.22);
+}
+.bubble.neutral { background: #f5f6fa; border: 1.5px solid #e3e6f0; color: #3a3f5c; }
+.bubble.rec {
+  background: linear-gradient(135deg,#eaf9ef,#f7fffa);
+  border: 1.5px solid #b7e7c6; color: #145a2a;
+  box-shadow: 0 4px 14px rgba(30,126,52,0.10);
+}
+
+.typing .bubble { display: flex; gap: 4px; align-items: center; padding: 12px 15px; }
+.typing .bubble span { width: 6px; height: 6px; border-radius: 50%; background: #b6bcd0; animation: bounce 1.1s infinite; }
+.typing .bubble span:nth-child(2) { animation-delay: 0.15s; }
+.typing .bubble span:nth-child(3) { animation-delay: 0.30s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0);opacity:.55} 30%{transform:translateY(-4px);opacity:1} }
+
+/* Comparison card */
+.cmp {
+  width: 100%; background: #fff; border: 1.5px solid #e6e9f5;
+  border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(28,35,64,0.08);
+}
+.cmp-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 13px; background: linear-gradient(90deg,#f7f4ff,#f2f8ff);
+  border-bottom: 1px solid #eceffa; gap: 8px;
+}
+.cmp-head .t { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #3b3468; }
+.cmp-head .s { font-size: 9.5px; font-weight: 700; color: #8b8fb0; }
+.cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 11px; }
+.cmp-grid.single { grid-template-columns: 1fr; }
+
+.plan {
+  border: 1.5px solid #e8ebf6; border-radius: 13px;
+  padding: 10px 11px; background: #fcfdff;
+  transition: all 0.3s cubic-bezier(.34,1.4,.64,1); position: relative;
+}
+.plan.yours {
+  border-color: #6d5efc;
+  background: linear-gradient(180deg,#f4f2ff,#ffffff);
+  box-shadow: 0 0 0 3px rgba(109,94,252,0.10), 0 8px 18px rgba(109,94,252,0.10);
+}
+.plan.rec {
+  border-color: #34a853;
+  background: linear-gradient(180deg,#f2fdf6,#ffffff);
+  box-shadow: 0 0 0 3px rgba(30,126,52,0.10), 0 8px 18px rgba(30,126,52,0.12);
+  transform: translateY(-2px);
+}
+.plan-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.plan-tag {
+  font-size: 9.5px; font-weight: 900; letter-spacing: 0.4px; text-transform: uppercase;
+  color: #4a3fa8; background: #efecff; padding: 3px 8px; border-radius: 6px;
+}
+.plan.rec .plan-tag { background: rgba(30,126,52,0.12); color: #145a2a; }
+.plan.yours .plan-tag { background: rgba(109,94,252,0.12); color: #3b2fd8; }
+.plan-days { font-size: 11.5px; font-weight: 700; color: #2a3150; margin-bottom: 5px; }
+.plan-days b { font-size: 14px; font-weight: 900; color: #145a2a; }
+.plan.yours .plan-days b { color: #3b2fd8; }
+.plan-bar { display: flex; height: 6px; border-radius: 4px; overflow: hidden; background: #eef1f8; margin-bottom: 9px; }
+.plan-bar .own  { background: linear-gradient(90deg, var(--mint), var(--mint-d)); }
+.plan-bar .help { background: linear-gradient(90deg, var(--sky), var(--sky-d)); }
+
+.prow { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding: 2.5px 0; font-size: 10.2px; color: #5d6485; }
+.prow b { font-family: 'SF Mono','Courier New',monospace; font-size: 10.5px; font-weight: 800; color: #1c2340; white-space: nowrap; }
+.prow.tot { border-top: 1px dashed #e2e6f2; margin-top: 5px; padding-top: 6px; color: #3b3468; font-weight: 800; }
+.prow.tot b { color: #a5761a; font-size: 11.5px; }
+
+.apply-btn {
+  display: block; width: 100%; margin-top: 9px;
+  padding: 8px 12px; border-radius: 20px;
+  border: 1.5px solid #d4d9f0; background: #f4f5fc; color: #4a3fa8;
+  font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: all 0.2s ease; text-align: center;
+}
+.apply-btn:hover { background: #ece8ff; border-color: #9b8bff; transform: translateY(-1px); }
+.plan.rec .apply-btn {
+  background: linear-gradient(135deg,#1e7e34,#34a853); color: #fff; border-color: transparent;
+  box-shadow: 0 4px 12px rgba(30,126,52,0.28);
+}
+.plan.rec .apply-btn:hover { box-shadow: 0 6px 18px rgba(30,126,52,0.42); }
+.plan.yours .apply-btn { background: rgba(109,94,252,0.08); border-color: #9b8bff; color: #3b2fd8; }
+.plan.yours .apply-btn:hover { background: rgba(109,94,252,0.14); }
+
+.cmp-foot {
+  padding: 8px 13px 10px; border-top: 1px solid #eef0f8;
+  font-size: 9.2px; line-height: 1.5; color: #8b8fb0; font-weight: 500; background: #fafbff;
+}
+
+/* TA Footer chips + input */
+.ta-ftr {
+  padding: 10px 12px 12px; border-top: 1px solid #eceffa;
+  background: #fff; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;
+}
+.ta-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  font-family: inherit; font-size: 10.5px; font-weight: 700;
+  padding: 7px 13px; border-radius: 20px;
+  border: 1.5px solid #dcd9f7; background: #fff; color: #4a3fa8;
+  cursor: pointer; transition: all 0.18s ease;
+}
+.chip:hover { background: #f2efff; border-color: #b9b0f5; transform: translateY(-1px); }
+.chip.primary {
+  background: linear-gradient(135deg, var(--violet), #8a6bff);
+  color: #fff; border-color: transparent; box-shadow: 0 5px 14px rgba(109,94,252,0.32);
+}
+.chip.primary:hover { box-shadow: 0 8px 20px rgba(109,94,252,0.45); }
+.chip:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.ta-input-wrap {
+  display: flex; gap: 7px; align-items: center;
+  background: #f4f5fc; border-radius: 24px; padding: 5px 5px 5px 14px;
+  border: 1.5px solid #e0d9ff; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ta-input-wrap:focus-within { border-color: #6d5efc; background: #fff; box-shadow: 0 0 0 3px rgba(109,94,252,0.10); }
+.ta-txt {
+  flex: 1; border: none; background: transparent; outline: none;
+  font-family: inherit; font-size: 12px; color: #1c2340; padding: 4px 0;
+}
+.ta-txt::placeholder { color: #adb0c5; }
+.ta-send {
+  width: 34px; height: 34px; border-radius: 50%; border: none;
+  background: linear-gradient(135deg,#6d5efc,#8a6bff); color: #fff;
+  font-size: 15px; cursor: pointer; display: grid; place-items: center;
+  flex-shrink: 0; box-shadow: 0 4px 12px rgba(109,94,252,0.35);
+  transition: all 0.2s ease; font-family: inherit;
+}
+.ta-send:hover { transform: scale(1.08); box-shadow: 0 6px 18px rgba(109,94,252,0.50); }
+
+/* ══ MODAL ══ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,30,18,0.55); backdrop-filter: blur(6px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000; opacity: 0; visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease; padding: 20px;
+}
+.modal-overlay.show { opacity: 1; visibility: visible; }
+.modal-card {
+  background: #fff; border-radius: 22px; padding: 26px 30px;
+  max-width: 470px; width: 100%;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.32); border: 2px solid #1e7e34;
+  transform: translateY(12px) scale(0.97);
+  transition: transform 0.28s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-overlay.show .modal-card { transform: none; }
+.modal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+.modal-icon {
+  width: 44px; height: 44px; border-radius: 13px;
+  background: linear-gradient(135deg,#1e7e34,#34a853);
+  display: grid; place-items: center; font-size: 21px; flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(30,126,52,0.28);
+}
+.modal-card h3 { font-size: 17px; font-weight: 800; color: #145a2a; }
+.modal-body { font-size: 12.5px; color: #3d5775; line-height: 1.6; }
+.modal-summary {
+  background: linear-gradient(145deg,#f4fbf6,#eaf5ee); border-radius: 12px;
+  padding: 12px 15px; margin: 12px 0; border: 1px solid rgba(30,126,52,0.15); font-size: 12px;
+}
+.modal-summary .row { display: flex; justify-content: space-between; padding: 3px 0; gap: 10px; }
+.modal-summary .row strong { color: #145a2a; font-family: 'SF Mono','Courier New',monospace; }
+.modal-warning {
+  padding: 10px 14px; background: rgba(232,93,74,0.09);
+  border: 1px solid rgba(232,93,74,0.32); border-radius: 10px;
+  font-size: 12px; color: #7a2e1f; margin-top: 10px; line-height: 1.5;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+.modal-btn { padding: 11px 22px; border-radius: 30px; font-weight: 700; font-size: 12.5px; border: none; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+.modal-btn-cancel { background: #f0f4fa; color: #3d5775; border: 1.5px solid #cddae9; }
+.modal-btn-cancel:hover { background: #e2eaf5; }
+.modal-btn-confirm { background: linear-gradient(135deg,#1e7e34,#34a853); color: #fff; box-shadow: 0 4px 16px rgba(30,126,52,0.3); }
+.modal-btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(30,126,52,0.42); }
+
+/* ══ FOOTER ══ */
+footer {
+  padding: 10px 24px; background: #f8fbf9; border-top: 1px solid rgba(30,126,52,0.08);
+  font-size: 10px; color: #6f8aa8;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  flex-shrink: 0;
+}
+footer .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #34a853; margin-right: 6px; animation: pulse 2s infinite; }
+
+/* Applied-plan toast */
+.plan-toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(0);
+  background: linear-gradient(135deg,#1e7e34,#34a853); color: #fff;
+  padding: 10px 20px; border-radius: 30px; font-size: 12.5px; font-weight: 700;
+  box-shadow: 0 8px 24px rgba(30,126,52,0.38); z-index: 600;
+  opacity: 0; animation: toastIn 0.3s ease forwards, toastOut 0.3s ease 2.2s forwards;
+  pointer-events: none; white-space: nowrap;
+}
+@keyframes toastIn  { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+@keyframes toastOut { to{opacity:0;transform:translateX(-50%) translateY(-6px)} }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🎯</div>
+      <div class="brand-text">
+        <h1>Effort Allocation Dashboard</h1>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="cond-wrap">
+        <label for="armSelect">Advisor arm</label>
+        <select id="armSelect">
+          <option value="forecast">Forecasts only</option>
+          <option value="rank">Rank mandate</option>
+          <option value="firm">Firm-value mandate</option>
+        </select>
+      </div>
+      <span class="badge-live">● LIVE</span>
+    </div>
+  </header>
+
+  <div class="case-tabs" id="caseTabs"></div>
+
+  <main>
+    <!-- LEFT: Projected Outcome -->
+    <section class="panel dark outcome">
+      <div class="panel-title">📊 Projected Outcome</div>
+
+      <div class="rank-card">
+        <div class="rank-header"><span class="hdr-icon">👤</span>Individual Sales Leaderboard Standing</div>
+        <div class="tier-display">
+          <span class="tier-badge pioneer" id="indTierBadge">—</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-top">
+          <span class="metric-name"><span class="dot own"></span> Own-account contribution</span>
+          <span class="metric-score" id="ownVal">—</span>
+        </div>
+        <div class="metric-bar"><div class="metric-fill own" id="ownFill" style="width:0%"></div></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-top">
+          <span class="metric-name"><span class="dot team"></span> Projected Team Revenue</span>
+          <span class="metric-score" id="teamRevenueVal">—</span>
+        </div>
+        <div class="metric-bar"><div class="metric-fill team" id="teamRevenueFill" style="width:0%"></div></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-top">
+          <span class="metric-name"><span class="dot team"></span> Team Sales Leaderboard Standing</span>
+        </div>
+        <div class="tier-display" style="margin-top:2px;">
+          <span class="tier-badge pioneer" id="teamTierBadge">—</span>
+        </div>
+      </div>
+
+      <div class="firm-box">
+        <div class="firm-label">🏢 Probable Contribution to Firm</div>
+        <div class="firm-value" id="firmVal">—</div>
+        <div class="firm-break" id="firmBreak">—</div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Effort Allocation -->
+    <section class="panel dark control">
+      <div class="panel-title">🕹️ Effort Allocation</div>
+
+      <div class="budget-card">
+        <div class="budget-label">Allocated · 10-day budget</div>
+        <div class="budget-value">
+          <span class="own-part"  id="budgetOwn">5</span>
+          <span class="sep">+</span>
+          <span class="help-part" id="budgetHelp">5</span>
+          <span class="budget-unit">days</span>
+        </div>
+      </div>
+
+      <div class="slider-group">
+        <div class="sg-head">
+          <span class="sg-label"><span class="icn">💰</span> Personal Sales Quota</span>
+          <span class="sg-value own" id="ownDaysPill">5 days</span>
+        </div>
+        <input type="range" id="ownSlider" min="0" max="10" step="1" value="5">
+      </div>
+
+      <div class="slider-group">
+        <div class="sg-head">
+          <span class="sg-label"><span class="icn">🤝</span> Helping a Team Member</span>
+          <span class="sg-value help" id="helpDaysPill">5 days</span>
+        </div>
+        <input type="range" id="helpSlider" min="0" max="10" step="1" value="5">
+      </div>
+
+      <div class="live-card">
+        <div class="live-title">📌 Live effect of your plan</div>
+        <div class="live-row"><span>Days split</span><b id="liveSplit">5 own / 5 helping</b></div>
+        <div class="live-row"><span>Individual Tier</span><b id="liveIndTier">—</b></div>
+        <div class="live-row"><span>Team Tier</span><b id="liveTeamTier">—</b></div>
+        <div class="live-row"><span>Probable Contribution to Firm</span><b class="gold" id="liveFirm">—</b></div>
+      </div>
+
+      <button class="btn btn-lock" id="btnLock" onclick="onLockClick()">
+        🔒 Lock decision &amp; continue
+      </button>
+      <div class="btn-hint" id="btnHint">
+        Compare your allocation with AI Assistant, then lock in.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span><span class="dot"></span>Live forecast · linked sliders · always 10 days</span>
+    <span>📊 All interactions are logged confidentially.</span>
+  </footer>
+</div>
+
+<!-- Floating Territory Assistant Widget -->
+<div class="ta-widget" id="taWidget">
+  <!-- Collapsed button -->
+  <button class="ta-fab" id="taFab" onclick="openTA()">
+    <div class="ta-fab-avatar">✨</div>
+    <div class="ta-fab-info">
+      <div class="ta-fab-label">Territory Assistant</div>
+      <div class="ta-fab-sub">AI · online</div>
+    </div>
+    <div class="ta-fab-dot"></div>
+  </button>
+
+  <!-- Expanded panel -->
+  <div class="ta-panel ta-hidden" id="taPanel">
+    <!-- Header -->
+    <div class="ta-phdr">
+      <div class="ta-phdr-left">
+        <div class="ta-phdr-ava">✨</div>
+        <div>
+          <div class="ta-phdr-name">Territory Assistant <span class="ai-pill">AI</span></div>
+          <div class="ta-phdr-sub" id="taPanelSub">Live plan comparison</div>
+        </div>
+        <div class="ta-phdr-status"><span class="live-dot"></span>online</div>
+      </div>
+      <div class="ta-phdr-btns">
+        <button class="ta-ctrl" id="btnTAMin" onclick="minimizeTA()" title="Minimize">─</button>
+        <button class="ta-ctrl" id="btnTAMax" onclick="maximizeTA()" title="Maximize">⤢</button>
+        <button class="ta-ctrl close" onclick="closeTA()" title="Close">✕</button>
+      </div>
+    </div>
+
+    <!-- Chat body -->
+    <div class="ta-body" id="chatHost"></div>
+
+    <!-- Footer: chips + chat input -->
+    <div class="ta-ftr">
+      <div class="ta-chips">
+        <button class="chip primary" id="chipCompare" onclick="comparePlans()">💬 Compare my options</button>
+        <button class="chip" onclick="explainHow()">How does this work?</button>
+      </div>
+      <!-- Chat input -->
+      <div class="ta-input-wrap">
+        <input type="text" class="ta-txt" id="chatInput"
+               placeholder="Tell me your target rank or days plan…"
+               onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="ta-send" onclick="sendChat()" title="Send">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-icon">🔒</div>
+      <h3>Confirm your allocation</h3>
+    </div>
+    <div class="modal-body">
+      <div>You are about to lock in your effort allocation for this territory.</div>
+      <div class="modal-summary" id="modalSummary"></div>
+      <div class="modal-warning" id="modalWarn" style="display:none;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal()">← Revise allocation</button>
+      <button class="modal-btn modal-btn-confirm" onclick="confirmLock()">OK, lock it in ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════ */
+const SURVEY_URL = 'https://cityu.qualtrics.com/jfe/form/SV_dipEKIFu3tNQ0JM';
+
+const CASES = [
+  {
+    id:'c1', name:'North Ridge', structure:'conflict',
+    p:{base:60,lin:26.0,quad:1.30}, c:{base:20,lin:7.0,quad:0.0}, 
+    anchor:192.6, step:1.30, seed:1207, defOwn:5
+  },
+  {
+    id:'c2', name:'Cedar Bay', structure:'synergy',
+    p:{base:82,lin:15.8,quad:1.00}, c:{base:30,lin:6.0,quad:0.0},
+    anchor:150.0, step:2.80, seed:8821, defOwn:6
+  }
+];
+
+const FN = ["Alex","Chae","Li","Lee","Sam","Kim","Raj","Mia","Eli","Ari","Kai","Nora","Theo","Ivy","Omar","Zoe","Ian","Ada","Leo","Maya","Ben","Sara","Noah","Rina"];
+const LN = ["P.","K.","W.","S.","T.","R.","M.","L.","H.","B.","C.","D."];
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const fmtK = v => '$' + Math.round(v) + 'K';
+
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function nameFor(i) { return FN[i % FN.length]+' '+LN[Math.floor(i/FN.length)%LN.length]; }
+
+function planOf(cs, o) {
+  const h = 10 - o;
+  const P = cs.p.base + cs.p.lin*o - cs.p.quad*o*o;
+  // C now increases as helping days (h) increases
+  const C = cs.c.base + cs.c.lin*h - cs.c.quad*h*h;
+  return { o, h, P, C, F: P+C };
+}
+
+function bestPlans(cs) {
+  let rankBest = null, firmBest = null;
+  for (let o = 0; o <= 10; o++) {
+    const pl = planOf(cs, o);
+    if (!rankBest || pl.P > rankBest.P + 1e-9) rankBest = pl;
+    if (!firmBest || pl.F > firmBest.F + 1e-9) firmBest = pl;
+  }
+  return { rankBest, firmBest };
+}
+
+function buildBoard(cs) {
+  const rnd = mulberry32(cs.seed);
+  const list = [];
+  for (let i = 0; i < 119; i++) {
+    const base = cs.anchor - i * cs.step;
+    const noise = (rnd() - 0.5) * cs.step * 1.15;
+    list.push({ name: nameFor(i), score: base + noise });
+  }
+  list.sort((a, b) => b.score - a.score);
+  return list;
+}
+
+function buildTeam(cs) {
+  const rnd = mulberry32(cs.seed + 7777);
+  const baseC = planOf(cs, cs.defOwn).C;
+  const team = [];
+  for (let i = 0; i < 7; i++) {
+    const delta = (rnd() - 0.5) * 40;
+    team.push({ name: nameFor(i + 60), score: Math.max(10, baseC + delta) });
+  }
+  return team.sort((a, b) => b.score - a.score);
+}
+
+function rankOf(board, P) {
+  let above = 0;
+  for (const b of board) if (b.score > P) above++;
+  return above + 1;
+}
+function teamRankOf(team, score) {
+  return team.filter(m => m.score > score).length + 1;
+}
+
+// New Tier Logic: Pioneer (Top), Challenger (Middle), Trailblazer (Lower)
+function getIndTier(rank) {
+  if (rank <= 30) return 'Pioneer';      // Top Tier
+  if (rank <= 80) return 'Challenger';   // Middle Tier
+  return 'Trailblazer';                  // Lower Tier
+}
+function getTeamTier(rank) {
+  if (rank <= 2) return 'Pioneer';       // Top Tier
+  if (rank <= 5) return 'Challenger';    // Middle Tier
+  return 'Trailblazer';                  // Lower Tier
+}
+function getTierClass(tier) {
+  return tier.toLowerCase();
+}
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+const state = { arm: 'firm', cur: 0, cases: [], taOpen: false, taMinimized: false, taMaximized: false };
+
+function initState() {
+  state.cases = CASES.map(cs => ({
+    own: cs.defOwn,
+    board: buildBoard(cs),
+    team: buildTeam(cs),
+    comparisons: 0,
+    locked: false,
+    final: null,
+    startRank: null,
+    startTime: null,
+    seeded: false,
+    chatEl: null,
+    chatVariants: {},
+    logs: []
+  }));
+
+  const host = $('chatHost');
+  host.innerHTML = '';
+  state.cases.forEach((st, i) => {
+    const d = document.createElement('div');
+    d.className = 'chat';
+    d.id = 'chat-'+i;
+    host.appendChild(d);
+    st.chatEl = d;
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   TA WIDGET
+═══════════════════════════════════════════════════════ */
+function openTA() {
+  $('taFab').style.display = 'none';
+  const p = $('taPanel');
+  p.classList.remove('ta-hidden','ta-min','ta-max');
+  state.taOpen = true;
+  state.taMinimized = false;
+  state.taMaximized = false;
+  updateTAControls();
+  activateCurrentChat();
+}
+function closeTA() {
+  $('taPanel').classList.add('ta-hidden');
+  $('taFab').style.display = '';
+  state.taOpen = false; state.taMinimized = false; state.taMaximized = false;
+}
+function minimizeTA() {
+  const p = $('taPanel');
+  if (state.taMinimized) {
+    p.classList.remove('ta-min');
+    state.taMinimized = false;
+  } else {
+    p.classList.remove('ta-max');
+    p.classList.add('ta-min');
+    state.taMinimized = true;
+    state.taMaximized = false;
+  }
+  updateTAControls();
+}
+function maximizeTA() {
+  const p = $('taPanel');
+  if (state.taMaximized) {
+    p.classList.remove('ta-max','ta-min');
+    state.taMaximized = false;
+  } else {
+    p.classList.remove('ta-min');
+    p.classList.add('ta-max');
+    state.taMaximized = true;
+    state.taMinimized = false;
+  }
+  updateTAControls();
+}
+function updateTAControls() {
+  $('btnTAMin').textContent = state.taMinimized ? '⬛' : '─';
+  $('btnTAMin').title = state.taMinimized ? 'Restore' : 'Minimize';
+  $('btnTAMax').textContent = state.taMaximized ? '⤡' : '⤢';
+  $('btnTAMax').title = state.taMaximized ? 'Restore' : 'Maximize';
+}
+function activateCurrentChat() {
+  document.querySelectorAll('.chat').forEach((c, k) => {
+    c.classList.toggle('active', k === state.cur);
+  });
+  const st = state.cases[state.cur];
+  if (st && st.chatEl) scrollChat(st.chatEl);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CHAT PRIMITIVES
+═══════════════════════════════════════════════════════ */
+function scrollChat(chat) { chat.scrollTop = chat.scrollHeight; }
+
+function addBot(chat, html, delay=0, variant='') {
+  const el = document.createElement('div');
+  el.className = 'msg bot';
+  el.style.animationDelay = delay+'ms';
+  el.innerHTML = `<div class="mini-ava">✨</div><div class="bubble ${variant}">${html}</div>`;
+  chat.appendChild(el);
+  scrollChat(chat);
+  return el;
+}
+function addUser(chat, html) {
+  const el = document.createElement('div');
+  el.className = 'msg user';
+  el.innerHTML = `<div class="bubble">${html}</div>`;
+  chat.appendChild(el);
+  scrollChat(chat);
+  return el;
+}
+function addTyping(chat) {
+  const el = document.createElement('div');
+  el.className = 'msg bot typing';
+  el.innerHTML = `<div class="mini-ava">✨</div><div class="bubble"><span></span><span></span><span></span></div>`;
+  chat.appendChild(el);
+  scrollChat(chat);
+  return el;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEED CHAT
+═══════════════════════════════════════════════════════ */
+function seedChat(i) {
+  const cs = CASES[i], st = state.cases[i];
+  if (st.seeded) return;
+  st.seeded = true;
+  const chat = st.chatEl;
+  chat.innerHTML = '';
+  addBot(chat, `Hi! I can help you plan <b>${cs.name}</b>. You have <b>10 working days</b> to split between your own quota and helping Dana.`, 0);
+  addBot(chat, `Move the sliders to explore. When you have a provisional plan, click <b>Compare my options</b> — I'll show your current plan next to my recommendation.<br><br>Or just type what you're aiming for below — a target rank, days on quota, anything.`, 320);
+}
+
+/* ═══════════════════════════════════════════════════════
+   COMPARE
+═══════════════════════════════════════════════════════ */
+function comparePlans() {
+  const i = state.cur, cs = CASES[i], st = state.cases[i];
+  if (st.locked) return;
+  if (!st.startTime) st.startTime = Date.now();
+
+  if (!state.taOpen) openTA();
+
+  const chat = st.chatEl;
+  st.comparisons++;
+  st.savedOwn = st.own;
+
+  addUser(chat, `My provisional plan: <b>${st.own} days</b> own quota · <b>${10-st.own} days</b> helping Dana.`);
+  const typing = addTyping(chat);
+
+  setTimeout(() => {
+    typing.remove();
+    
+    if (state.arm === 'forecast') {
+      addBot(chat, `Here is the forecast for your current allocation in <b>${cs.name}</b>.`, 0);
+    } else {
+      addBot(chat, `Here are the two candidate plans for <b>${cs.name}</b>. Plan A is your current allocation; Plan B is my recommendation.`, 0);
+    }
+
+    const card = buildCompareCard(i);
+    chat.appendChild(card);
+    scrollChat(chat);
+    if (state.arm !== 'forecast') {
+      setTimeout(() => { addEndorsement(chat, i); scrollChat(chat); }, 340);
+    }
+  }, 780);
+}
+
+function planCardHTML(label, pl, board, team, isMine, isRec) {
+  const rank     = rankOf(board, pl.P);
+  const tRank    = teamRankOf(team, pl.C);
+  const indTier  = getIndTier(rank);
+  const teamTier = getTeamTier(tRank);
+  const cls      = isMine ? 'yours' : (isRec ? 'rec' : '');
+  const tagTxt   = isMine ? 'Your Plan' : 'AI Recommendation';
+  const applyLbl = isMine ? '✓ Keep this plan' : '✓ Apply this plan to my sliders';
+
+  return `
+  <div class="plan ${cls}" id="planCard_${label.replace(/\s/g,'')}">
+    <div class="plan-head">
+      <span class="plan-tag">${label} · ${tagTxt}</span>
+    </div>
+    <div class="plan-days"><b>${pl.o}</b> own · <b>${pl.h}</b> helping</div>
+    <div class="plan-bar">
+      <span class="own"  style="width:${pl.o*10}%"></span>
+      <span class="help" style="width:${pl.h*10}%"></span>
+    </div>
+    <div class="prow"><span>Individual Tier</span><b class="tier-badge ${getTierClass(indTier)}" style="font-size:10px; padding:2px 8px; box-shadow:none;">Tier: ${indTier}</b></div>
+    <div class="prow"><span>Team Tier</span><b class="tier-badge ${getTierClass(teamTier)}" style="font-size:10px; padding:2px 8px; box-shadow:none;">Tier: ${teamTier}</b></div>
+    <div class="prow"><span>Own-account contribution</span><b>${fmtK(pl.P)}</b></div>
+    <div class="prow"><span>Projected Team Revenue</span><b>${fmtK(pl.C)}</b></div>
+    <div class="prow tot"><span>Probable Contribution to Firm</span><b>${fmtK(pl.F)}</b></div>
+    <button class="apply-btn" onclick="applyPlan(${pl.o},'${label}')">${applyLbl}</button>
+  </div>`;
+}
+
+function buildCompareCard(i) {
+  const cs = CASES[i], st = state.cases[i];
+  const { rankBest, firmBest } = bestPlans(cs);
+
+  const userPlan = planOf(cs, st.own);
+  const wrap = document.createElement('div');
+  wrap.className = 'msg card';
+
+  if (state.arm === 'forecast') {
+    const rank = rankOf(st.board, userPlan.P);
+    const tRank = teamRankOf(st.team, userPlan.C);
+    const indTier = getIndTier(rank);
+    const teamTier = getTeamTier(tRank);
+
+    wrap.innerHTML = `
+    <div class="cmp">
+      <div class="cmp-head">
+        <span class="t">Forecast · ${cs.name}</span>
+        <span class="s">10-day budget</span>
+      </div>
+      <div class="cmp-grid single">
+        <div class="plan yours">
+          <div class="plan-head">
+            <span class="plan-tag">Your Allocation</span>
+          </div>
+          <div class="plan-days"><b>${userPlan.o}</b> own · <b>${userPlan.h}</b> helping</div>
+          <div class="plan-bar">
+            <span class="own"  style="width:${userPlan.o*10}%"></span>
+            <span class="help" style="width:${userPlan.h*10}%"></span>
+          </div>
+          <div class="prow"><span>Probable Individual Tier</span><b class="tier-badge ${getTierClass(indTier)}" style="font-size:10px; padding:2px 8px; box-shadow:none;">Tier: ${indTier}</b></div>
+          <div class="prow"><span>Probable Team Tier</span><b class="tier-badge ${getTierClass(teamTier)}" style="font-size:10px; padding:2px 8px; box-shadow:none;">Tier: ${teamTier}</b></div>
+          <div class="prow"><span>Own-account contribution</span><b>${fmtK(userPlan.P)}</b></div>
+          <div class="prow"><span>Projected Team Revenue</span><b>${fmtK(userPlan.C)}</b></div>
+          <div class="prow tot"><span>Probable Contribution to Firm</span><b>${fmtK(userPlan.F)}</b></div>
+        </div>
+      </div>
+    </div>`;
+    return wrap;
+  }
+
+  let aiPlan, aiIsRec = true;
+  if (state.arm === 'rank')     aiPlan = rankBest;
+  else if (state.arm === 'firm') aiPlan = firmBest;
+
+  wrap.innerHTML = `
+  <div class="cmp">
+    <div class="cmp-head">
+      <span class="t">Plan comparison · ${cs.name}</span>
+      <span class="s">10-day budget · live forecast</span>
+    </div>
+    <div class="cmp-grid">
+      ${planCardHTML('Plan A', userPlan, st.board, st.team, true,  false)}
+      ${planCardHTML('Plan B', aiPlan,   st.board, st.team, false, aiIsRec)}
+    </div>
+    <div class="cmp-foot">
+      Combined firm contribution = own-account + incremental colleague contribution.
+    </div>
+  </div>`;
+  return wrap;
+}
+
+function addEndorsement(chat, i) {
+  const cs = CASES[i], st = state.cases[i];
+  const { rankBest, firmBest } = bestPlans(cs);
+
+  if (state.arm === 'rank') {
+    const recRank = rankOf(st.board, rankBest.P);
+    const yourRank = rankOf(st.board, planOf(cs, st.own).P);
+    addBot(chat,
+      `I recommend <b>Plan B</b>. It maximises your individual standing: <b>Tier: ${getIndTier(recRank)}</b> versus your current <b>Tier: ${getIndTier(yourRank)}</b>.`,
+      0, 'rec');
+    addAIChoicePrompt(chat, planOf(cs, st.own), rankBest);
+    return;
+  }
+  
+  const recF   = fmtK(firmBest.F);
+  const yourF  = fmtK(planOf(cs, st.own).F);
+  addBot(chat,
+    `I recommend <b>Plan B</b>. It delivers the highest probable contribution to firm: <b>${recF}</b> versus your current <b>${yourF}</b>.`,
+    0, 'rec');
+  addAIChoicePrompt(chat, planOf(cs, st.own), firmBest);
+}
+
+function addAIChoicePrompt(chat, userPlan, aiPlan) {
+  if (userPlan.o === aiPlan.o) return;
+  setTimeout(() => {
+    const el = document.createElement('div');
+    el.className = 'msg bot';
+    el.style.animationDelay = '120ms';
+    el.innerHTML = `<div class="mini-ava">✨</div>
+    <div class="bubble" style="background:#f5f4ff;border:1.5px solid #d8d2ff;color:#2a235c;padding:11px 14px;">
+      <div style="font-size:11px;font-weight:800;color:#5b4bd6;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.4px;">
+        💡 Which plan would you like to apply?
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="applyPlan(${userPlan.o},'Plan A')"
+          style="flex:1;padding:8px 10px;border-radius:14px;border:1.5px solid #9b8bff;
+                 background:#fff;color:#4a3fa8;font-family:inherit;font-size:11px;
+                 font-weight:700;cursor:pointer;transition:all .18s ease;"
+          onmouseover="this.style.background='#ece8ff'" onmouseout="this.style.background='#fff'">
+          Plan A — Your current<br><span style="font-weight:600;color:#8b8fb0">${userPlan.o} own · ${userPlan.h} help</span>
+        </button>
+        <button onclick="applyPlan(${aiPlan.o},'Plan B')"
+          style="flex:1;padding:8px 10px;border-radius:14px;border:1.5px solid #34a853;
+                 background:linear-gradient(135deg,#eafef2,#fff);color:#145a2a;
+                 font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;
+                 transition:all .18s ease;box-shadow:0 3px 10px rgba(30,126,52,.14);"
+          onmouseover="this.style.background='#d4f7e3'" onmouseout="this.style.background='linear-gradient(135deg,#eafef2,#fff)'">
+          Plan B — AI suggestion<br><span style="font-weight:600;color:#34a853">${aiPlan.o} own · ${aiPlan.h} help</span>
+        </button>
+      </div>
+      <div style="font-size:9.5px;color:#8b8fb0;margin-top:7px;">Choosing a plan will update your sliders automatically.</div>
+    </div>`;
+    chat.appendChild(el);
+    scrollChat(chat);
+  }, 700);
+}
+
+function applyPlan(ownDays, label) {
+  const i = state.cur, st = state.cases[i];
+  if (st.locked) return;
+  st.own = ownDays;
+  renderAll();
+
+  const chat = st.chatEl;
+  setTimeout(() => {
+    addBot(chat,
+      `Done! I've set your allocation to <b>${ownDays} days</b> own quota · <b>${10-ownDays} days</b> helping Dana. Review the sliders and lock in whenever you're ready.`,
+      0, 'rec');
+    scrollChat(chat);
+  }, 300);
+
+  const toast = document.createElement('div');
+  toast.className = 'plan-toast';
+  toast.textContent = `${label} applied — ${ownDays} own / ${10-ownDays} helping`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2700);
+}
+
+/* ═══════════════════════════════════════════════════════
+   EXPLAIN HOW
+═══════════════════════════════════════════════════════ */
+function explainHow() {
+  const i = state.cur, st = state.cases[i];
+  if (!state.taOpen) openTA();
+  const chat = st.chatEl;
+  addUser(chat, 'How does this work?');
+  const typing = addTyping(chat);
+  setTimeout(() => {
+    typing.remove();
+    addBot(chat,
+      `I scan all <b>11 feasible splits</b> of your 10 days (0 to 10 own). For each split I project three things:<br>
+       <b>① Individual Tier</b> — Pioneer (Top), Challenger (Middle), Trailblazer (Lower).<br>
+       <b>② Team Tier</b> — Pioneer (Top), Challenger (Middle), Trailblazer (Lower).<br>
+       <b>③ Probable Contribution to Firm</b> — own-account + projected team revenue; shared sales counted once.<br><br>
+       When you click <em>Compare my options</em>, I show your current plan against my recommendation.`,
+      0);
+  }, 620);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CHAT INPUT
+═══════════════════════════════════════════════════════ */
+function sendChat() {
+  const inp = $('chatInput');
+  const raw = inp.value.trim();
+  if (!raw) return;
+  inp.value = '';
+
+  if (!state.taOpen) openTA();
+  const i = state.cur, cs = CASES[i], st = state.cases[i];
+  const chat = st.chatEl;
+
+  addUser(chat, raw);
+  const typing = addTyping(chat);
+
+  setTimeout(() => {
+    typing.remove();
+    const response = generateChatResponse(raw, cs, st);
+    addBot(chat, response.html, 0, response.variant || '');
+    scrollChat(chat);
+  }, 900 + Math.random() * 400);
+}
+
+function generateChatResponse(text, cs, st) {
+  const t = text.toLowerCase();
+  const { rankBest, firmBest } = bestPlans(cs);
+
+  const rankMatch = t.match(/(?:rank|top|#|position|place|tier)\s*(\d+)|(\d+)\s*(?:rank|place|position)/);
+  if (rankMatch) {
+    const target = parseInt(rankMatch[1] || rankMatch[2]);
+    return handleRankTarget(target, cs, st);
+  }
+
+  const ownMatch = t.match(/(\d+)\s*days?\s*(?:on\s+)?(?:my|own|personal|quota|self)/);
+  if (ownMatch) {
+    const days = Math.min(10, Math.max(0, parseInt(ownMatch[1])));
+    return handleDaysPlan(days, 'own', cs, st);
+  }
+
+  const helpMatch = t.match(/(\d+)\s*days?\s*(?:help|assist|team|dana|support|collea)/);
+  if (helpMatch) {
+    const days = Math.min(10, Math.max(0, parseInt(helpMatch[1])));
+    return handleDaysPlan(10 - days, 'help', cs, st);
+  }
+
+  if (/(?:best|max|highest|top)\s*(?:rank|personal)|max.*rank|rank.*max|improve.*rank/.test(t)) {
+    return handleBestRank(cs, st);
+  }
+
+  if (/(?:best|max|highest)\s*(?:firm|team|contribution|combined)|team.*value|firm.*max|help.*team/.test(t)) {
+    return handleBestFirm(cs, st);
+  }
+
+  if (/tradeoff|conflict|synergy|tension|balance|both/.test(t)) {
+    return handleTradeoff(cs, st);
+  }
+
+  if (/suggest|advice|recommend|what should|tell me|help me decide|optimal/.test(t)) {
+    return handleGenericAdvice(cs, st);
+  }
+
+  return handleDefault(cs, st);
+}
+
+function handleRankTarget(target, cs, st) {
+  if (target < 1 || target > 120) {
+    return { html: `The leaderboard runs from #1 to #120. Which rank are you aiming for?`, variant: 'neutral' };
+  }
+  let bestOwn = null;
+  for (let o = 10; o >= 0; o--) {
+    const pl = planOf(cs, o);
+    const r = rankOf(st.board, pl.P);
+    if (r <= target) bestOwn = o;
+  }
+  if (bestOwn === null) {
+    const { rankBest } = bestPlans(cs);
+    const bestR = rankOf(st.board, rankBest.P);
+    return {
+      html: `Reaching #${target} isn't achievable in <b>${cs.name}</b> even with the full 10 days on quota — the best reachable rank is <b>#${bestR}</b> with <b>10 own / 0 helping</b>. Would you like to target that instead?`,
+      variant: 'neutral'
+    };
+  }
+  const pl = planOf(cs, bestOwn);
+  const achievedRank = rankOf(st.board, pl.P);
+  const variants = [
+    `To reach <b>#${target}</b>, you need around <b>${bestOwn} days</b> on your own quota. That projects you to <b>${getIndTier(achievedRank)}</b> with <b>${fmtK(pl.F)}</b> probable contribution to firm. Want me to compare that with your current plan?`,
+    `Working backwards from <b>#${target}</b>: a <b>${bestOwn}-${10-bestOwn} split</b> gets you to <b>${getIndTier(achievedRank)}</b>. Probable contribution to firm would be <b>${fmtK(pl.F)}</b>.`,
+    `Aiming for <b>#${target}</b>? You'd want roughly <b>${bestOwn} own / ${10-bestOwn} helping</b>. Projected tier: <b>${getIndTier(achievedRank)}</b>. Probable value: <b>${fmtK(pl.F)}</b>. Try that on the sliders — does it feel right?`
+  ];
+  const v = getVariant(st, 'rankTarget');
+  return { html: variants[v % variants.length], variant: 'rec' };
+}
+
+function handleDaysPlan(ownDays, type, cs, st) {
+  const pl = planOf(cs, ownDays);
+  const rank = rankOf(st.board, pl.P);
+  const tRank = teamRankOf(st.team, pl.C);
+  const indTier = getIndTier(rank);
+  const teamTier = getTeamTier(tRank);
+  const curPl = planOf(cs, st.own);
+  const curR = rankOf(st.board, curPl.P);
+  const diff = curR - rank;
+  const rankNote = diff > 0 ? `That's better than your current ${getIndTier(curR)} tier.` :
+                   diff < 0 ? `That would drop you from your current ${getIndTier(curR)} tier.` :
+                   `Same projected tier as your current plan.`;
+  const variants = [
+    `With <b>${ownDays} own / ${10-ownDays} helping</b>, you'd project to <b>${indTier}</b> individually and <b>${teamTier}</b> on your team. ${rankNote} Probable contribution to firm: <b>${fmtK(pl.F)}</b>.`,
+    `A <b>${ownDays}-${10-ownDays} split</b> looks like this → Individual Tier: <b>${indTier}</b>, Team Tier: <b>${teamTier}</b>, Probable Firm Value: <b>${fmtK(pl.F)}</b>. ${rankNote}`,
+    `Let me run that… <b>${ownDays} days own · ${10-ownDays} helping</b> → Tier <b>${indTier}</b> (team: <b>${teamTier}</b>), probable contribution <b>${fmtK(pl.F)}</b>. ${rankNote}`
+  ];
+  const v = getVariant(st, 'daysPlan');
+  return { html: variants[v % variants.length], variant: '' };
+}
+
+function handleBestRank(cs, st) {
+  const { rankBest } = bestPlans(cs);
+  const rank = rankOf(st.board, rankBest.P);
+  const tRank = teamRankOf(st.team, rankBest.C);
+  const indTier = getIndTier(rank);
+  const teamTier = getTeamTier(tRank);
+  const variants = [
+    `The rank-maximising split for <b>${cs.name}</b> is <b>${rankBest.o} own / ${rankBest.h} helping</b>. That projects you to <b>${indTier}</b> individually and <b>${teamTier}</b> on your team, with probable contribution to firm of <b>${fmtK(rankBest.F)}</b>.`,
+    `To peak your individual standing in <b>${cs.name}</b>, go <b>${rankBest.o} days own · ${rankBest.h} helping</b>. You'd land at <b>${indTier}</b>. Probable firm value: <b>${fmtK(rankBest.F)}</b>. Want me to apply that to your sliders?`,
+    `Best rank scenario → <b>${rankBest.o} own / ${rankBest.h} help</b> = <b>${indTier}</b> individual, <b>${teamTier}</b> team. Probable firm value: <b>${fmtK(rankBest.F)}</b>.`
+  ];
+  const v = getVariant(st, 'bestRank');
+  return { html: variants[v % variants.length], variant: 'rec' };
+}
+
+function handleBestFirm(cs, st) {
+  const { firmBest } = bestPlans(cs);
+  const rank = rankOf(st.board, firmBest.P);
+  const tRank = teamRankOf(st.team, firmBest.C);
+  const indTier = getIndTier(rank);
+  const teamTier = getTeamTier(tRank);
+  const variants = [
+    `For maximum probable contribution to firm in <b>${cs.name}</b>, go <b>${firmBest.o} own / ${firmBest.h} helping</b>. That generates <b>${fmtK(firmBest.F)}</b> combined — your individual tier would be <b>${indTier}</b> and team tier <b>${teamTier}</b>.`,
+    `Team-value maximiser → <b>${firmBest.o} days own · ${firmBest.h} helping</b>. Probable contribution to firm: <b>${fmtK(firmBest.F)}</b>. Individual tier: <b>${indTier}</b>.`,
+    `Optimising for the team: <b>${firmBest.o} own / ${firmBest.h} help</b> peaks probable contribution at <b>${fmtK(firmBest.F)}</b>. You'd stand in <b>${indTier}</b> individually. Is that acceptable to you?`
+  ];
+  const v = getVariant(st, 'bestFirm');
+  return { html: variants[v % variants.length], variant: 'rec' };
+}
+
+function handleTradeoff(cs, st) {
+  const { rankBest, firmBest } = bestPlans(cs);
+  const rTier = getIndTier(rankOf(st.board, rankBest.P));
+  const fTier = getIndTier(rankOf(st.board, firmBest.P));
+  if (cs.structure === 'conflict') {
+    return {
+      html: `In <b>${cs.name}</b> there's a genuine tradeoff: more days on your own quota improves your individual tier (${rTier} at best), but pulls time from Dana. The firm-optimal split is <b>${firmBest.o} own / ${firmBest.h} helping</b> (individual tier: ${fTier}, probable firm value: <b>${fmtK(firmBest.F)}</b>).`,
+      variant: 'neutral'
+    };
+  }
+  return {
+    html: `<b>${cs.name}</b> is a synergy territory — helping Dana partly feeds back into your own pipeline. The rank-optimal split (<b>${rankBest.o} own · ${rankBest.h} help</b> → ${rTier}) and the firm-optimal split (<b>${firmBest.o} own · ${firmBest.h} help</b> → ${fTier}) are ${rankBest.o === firmBest.o ? 'actually the same' : 'close but not identical'}.`,
+    variant: 'neutral'
+  };
+}
+
+function handleGenericAdvice(cs, st) {
+  const arm = state.arm;
+  const { rankBest, firmBest } = bestPlans(cs);
+  const rec = arm === 'rank' ? rankBest : firmBest;
+  const recLabel = arm === 'rank' ? 'individual standing' : 'probable firm value';
+  const tier = getIndTier(rankOf(st.board, rec.P));
+  const variants = [
+    `Based on what I'm tracking for <b>${cs.name}</b>, if you want to maximise <b>${recLabel}</b>, I'd suggest <b>${rec.o} days own / ${rec.h} helping</b>. That projects to <b>${tier}</b> and probable contribution <b>${fmtK(rec.F)}</b>.`,
+    `My suggestion for <b>${cs.name}</b>: try <b>${rec.o} own · ${rec.h} helping</b>. It optimises <b>${recLabel}</b> at <b>${fmtK(rec.F)}</b> combined, with a projected tier of <b>${tier}</b>.`,
+    `For <b>${cs.name}</b>, I'd go <b>${rec.o} days on quota, ${rec.h} on Dana</b>. That maximises <b>${recLabel}</b>: tier <b>${tier}</b>, probable firm value <b>${fmtK(rec.F)}</b>.`
+  ];
+  const v = getVariant(st, 'advice');
+  return { html: variants[v % variants.length], variant: 'rec' };
+}
+
+function handleDefault(cs, st) {
+  const defaults = [
+    `Happy to help you plan <b>${cs.name}</b>! Try telling me: <em>"I want to reach top 20"</em>, <em>"I'm thinking 7 days own quota"</em>, or <em>"what maximises my rank?"</em> — and I'll work out the best split.`,
+    `I can suggest an allocation if you share your goal. For example: <em>"rank top 15"</em>, or <em>"6 days helping"</em>, or <em>"what's best for the team?"</em> — what's your priority?`,
+    `Let me know what you're aiming for in <b>${cs.name}</b>. I can optimise for individual standing, team contribution, or find a balance. What matters most to you right now?`
+  ];
+  const v = getVariant(st, 'default');
+  return { html: defaults[v % defaults.length], variant: 'neutral' };
+}
+
+function getVariant(st, key) {
+  if (!st.chatVariants[key]) st.chatVariants[key] = 0;
+  return st.chatVariants[key]++;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════ */
+function renderTabs() {
+  const wrap = $('caseTabs');
+  wrap.innerHTML = '';
+  CASES.forEach((cs, i) => {
+    const st = state.cases[i];
+    const btn = document.createElement('button');
+    btn.className = 'case-tab';
+    if (i === state.cur && !st.locked) btn.classList.add('active');
+    if (st.locked) btn.classList.add('completed');
+    const num = st.locked ? '✓' : String(i+1);
+    btn.innerHTML = `
+      <span class="ct-num">${num}</span>
+      <span class="ct-name">${cs.name}</span>
+      <span class="ct-tag ${cs.structure}">${cs.structure}</span>`;
+    btn.addEventListener('click', () => openCase(i));
+    wrap.appendChild(btn);
+  });
+}
+
+function renderAll() {
+  const i = state.cur, cs = CASES[i], st = state.cases[i];
+  const pl    = planOf(cs, st.own);
+  const rank  = rankOf(st.board, pl.P);
+  const tRank = teamRankOf(st.team, pl.C);
+  const helpDays = 10 - st.own;
+
+  const ownSlider  = $('ownSlider');
+  const helpSlider = $('helpSlider');
+  ownSlider.value  = st.own;
+  helpSlider.value = helpDays;
+  ownSlider.disabled  = st.locked;
+  helpSlider.disabled = st.locked;
+
+  ownSlider.style.setProperty('--pct', (st.own * 10)+'%');
+  ownSlider.style.setProperty('--fillcol', '#7ae89a');
+  ownSlider.style.setProperty('--fillb', '#1e7e34');
+  helpSlider.style.setProperty('--pct', (helpDays * 10)+'%');
+  helpSlider.style.setProperty('--fillcol', '#7ac8e8');
+  helpSlider.style.setProperty('--fillb', '#2f8fc4');
+
+  $('ownDaysPill').textContent  = st.own  + (st.own === 1  ? ' day' : ' days');
+  $('helpDaysPill').textContent = helpDays + (helpDays === 1 ? ' day' : ' days');
+  $('budgetOwn').textContent  = st.own;
+  $('budgetHelp').textContent = helpDays;
+
+  const indTier = getIndTier(rank);
+  const teamTier = getTeamTier(tRank);
+
+  $('indTierBadge').textContent = 'Tier: ' + indTier;
+  $('indTierBadge').className = 'tier-badge ' + getTierClass(indTier);
+  $('teamTierBadge').textContent = 'Tier: ' + teamTier;
+  $('teamTierBadge').className = 'tier-badge ' + getTierClass(teamTier);
+
+  $('ownVal').textContent = fmtK(pl.P);
+  $('ownFill').style.width = Math.min(100,(pl.P/200)*100)+'%';
+
+  $('teamRevenueVal').textContent = fmtK(pl.C);
+  $('teamRevenueFill').style.width = Math.min(100,(pl.C/150)*100)+'%';
+
+  $('firmVal').textContent   = fmtK(pl.F);
+  $('firmBreak').textContent = `${fmtK(pl.P)} Own + ${fmtK(pl.C)} Team`;
+
+  $('liveSplit').textContent    = `${st.own} own / ${helpDays} helping`;
+  $('liveIndTier').textContent  = indTier;
+  $('liveTeamTier').textContent = teamTier;
+  $('liveFirm').textContent     = fmtK(pl.F);
+
+  $('taPanelSub').textContent = `Live comparison · ${cs.name}`;
+
+  renderButtons();
+}
+
+function renderButtons() {
+  const i = state.cur, st = state.cases[i];
+  const btn  = $('btnLock');
+  const hint = $('btnHint');
+  btn.classList.remove('continue');
+
+  if (st.locked) {
+    btn.disabled = false;
+    if (i < CASES.length-1) {
+      btn.innerHTML = `Continue to ${CASES[i+1].name} →`;
+      btn.classList.add('continue');
+      hint.innerHTML = 'Territory complete.';
+    } else {
+      btn.innerHTML = '✅ All territories complete → Survey';
+      btn.classList.add('continue');
+      hint.innerHTML = 'Thank you — the final questionnaire is next.';
+    }
+    $('chipCompare').disabled = true;
+    return;
+  }
+
+  $('chipCompare').disabled = false;
+  btn.innerHTML = '🔒 Lock decision &amp; continue';
+  btn.disabled = false; 
+  
+  if (st.comparisons === 0) {
+    hint.innerHTML = 'Compare your allocation with AI Assistant, then lock in.';
+  } else if (st.savedOwn !== undefined && st.savedOwn !== st.own) {
+    hint.innerHTML = 'Your sliders changed since the last comparison — compare again if you like.';
+  } else {
+    hint.innerHTML = 'You can still revise the sliders until you lock.';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   CASE SWITCHING
+═══════════════════════════════════════════════════════ */
+function openCase(i) {
+  const st = state.cases[i];
+  state.cur = i;
+  const cs = CASES[i];
+
+  if (st.startRank === null) {
+    st.startTime = Date.now();
+    st.startRank = rankOf(st.board, planOf(cs, st.own).P);
+  }
+
+  seedChat(i);
+  activateCurrentChat();
+  renderTabs();
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOCK FLOW
+═══════════════════════════════════════════════════════ */
+function onLockClick() {
+  const i = state.cur, st = state.cases[i];
+  if (st.locked) {
+    if (i < CASES.length - 1) openCase(i + 1);
+    else goToSurvey();
+    return;
+  }
+  openModal();
+}
+
+function openModal() {
+  const i = state.cur, cs = CASES[i], st = state.cases[i];
+  const pl = planOf(cs, st.own);
+  const rank = rankOf(st.board, pl.P);
+  const indTier = getIndTier(rank);
+
+  $('modalSummary').innerHTML = `
+    <div class="row"><span>💰 Personal Sales Quota</span><strong>${st.own} days</strong></div>
+    <div class="row"><span>🤝 Helping a Team Member</span><strong>${10 - st.own} days</strong></div>
+    <div class="row" style="border-top:1px dashed rgba(30,126,52,.22); margin-top:6px; padding-top:6px;">
+      <span>👤 Probable Individual Tier</span><strong>Tier: ${indTier}</strong>
+    </div>
+    <div class="row"><span>🏢 Probable Contribution to Firm</span><strong>${fmtK(pl.F)}</strong></div>`;
+
+  const warn = $('modalWarn');
+  if (st.comparisons === 0) {
+    warn.style.display = 'block';
+    warn.innerHTML = '⚠️ You have not yet asked the assistant to compare your options.';
+  } else if (st.savedOwn !== undefined && st.savedOwn !== st.own) {
+    warn.style.display = 'block';
+    warn.innerHTML = '⚠️ Your sliders changed since the last comparison.';
+  } else {
+    warn.style.display = 'none';
+  }
+
+  $('modal').classList.add('show');
+}
+function closeModal() { $('modal').classList.remove('show'); }
+
+function confirmLock() {
+  closeModal();
+  setTimeout(() => {
+    const i = state.cur, cs = CASES[i], st = state.cases[i];
+    if (st.locked) return;
+    st.locked = true;
+    st.savedOwn = st.own;
+
+    const pl = planOf(cs, st.own);
+    const rank = rankOf(st.board, pl.P);
+    const { rankBest, firmBest } = bestPlans(cs);
+
+    st.final = {
+      caseId: cs.id,
+      caseName: cs.name,
+      structure: cs.structure,
+      arm: state.arm,
+      ownDays: st.own,
+      helpDays: 10 - st.own,
+      ownContribution: +pl.P.toFixed(2),
+      colleagueContribution: +pl.C.toFixed(2),
+      firmContribution: +pl.F.toFixed(2),
+      personalRank: rank,
+      rankBestPlan: { own: rankBest.o, help: rankBest.h, firm: +rankBest.F.toFixed(2) },
+      firmBestPlan: { own: firmBest.o, help: firmBest.h, firm: +firmBest.F.toFixed(2) },
+      rankMaxAchievable: rankOf(st.board, rankBest.P),
+      comparisonsRequested: st.comparisons,
+      timeOnCaseSec: Math.floor((Date.now() - st.startTime) / 1000)
+    };
+
+    renderTabs();
+    renderAll();
+    console.log('📊 CASE LOCKED:', JSON.stringify(st.final, null, 2));
+
+    if (state.cases.every(s => s.locked)) {
+      $('btnLock').disabled = false;
+      $('btnLock').innerHTML = '✅ All territories complete → Survey';
+      $('btnLock').classList.add('continue');
+    }
+  }, 220);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SURVEY
+═══════════════════════════════════════════════════════ */
+function goToSurvey() {
+  const payload = getFinalData();
+  try {
+    localStorage.setItem('study2_payload', JSON.stringify(payload));
+    sessionStorage.setItem('study2_payload', JSON.stringify(payload));
+  } catch (e) { console.warn('storage failed', e); }
+
+  try {
+    window.parent.postMessage({ type: 'STUDY2_COMPLETE', payload }, '*');
+  } catch (e) { console.warn('postMessage failed', e); }
+
+  const params = new URLSearchParams();
+  params.set('source', 'dashboard2');
+  params.set('arm', state.arm);
+  params.set('completed', payload.allCompleted ? '1' : '0');
+  const url = SURVEY_URL + '?' + params.toString();
+
+  setTimeout(() => {
+    try {
+      if (window.top && window.top !== window) window.top.location.href = url;
+      else window.location.href = url;
+    } catch (e) { window.location.href = url; }
+  }, 600);
+}
+
+function getFinalData() {
+  const out = { arm: state.arm, allCompleted: state.cases.every(s => s.locked), cases: {} };
+  state.cases.forEach((st, i) => { out.cases[CASES[i].id] = st.final; });
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SLIDER WIRING
+═══════════════════════════════════════════════════════ */
+function bindSliders() {
+  const ownSlider = $('ownSlider');
+  const helpSlider = $('helpSlider');
+
+  ownSlider.addEventListener('input', e => {
+    const st = state.cases[state.cur];
+    if (st.locked) return;
+    st.own = parseInt(e.target.value, 10);
+    renderAll();
+  });
+
+  helpSlider.addEventListener('input', e => {
+    const st = state.cases[state.cur];
+    if (st.locked) return;
+    const help = parseInt(e.target.value, 10);
+    st.own = 10 - help;
+    renderAll();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   ARM SELECT
+═══════════════════════════════════════════════════════ */
+function bindArm() {
+  const sel = $('armSelect');
+  const qp = new URLSearchParams(location.search).get('arm');
+  if (qp && ['forecast', 'rank', 'firm'].includes(qp)) sel.value = qp;
+  state.arm = sel.value;
+
+  sel.addEventListener('change', () => {
+    state.arm = sel.value;
+    initState();
+    state.cur = 0;
+    openCase(0);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  bindArm();
+  bindSliders();
+  initState();
+  openCase(0);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('modal').classList.contains('show')) closeModal();
+});
+
+window.getFinalData = getFinalData;
+</script>
+</body>
+</html>
